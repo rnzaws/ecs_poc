@@ -28,15 +28,19 @@ Parameters:
     Type: Number
     Default: 2
 
-  SourceSecurityGroup:
-    Type: AWS::EC2::SecurityGroup::Id
-
   VpcStackName:
     Type: String
     MinLength: 1
     MaxLength: 20
     AllowedPattern: "^[a-zA-Z][-a-zA-Z0-9]*$"
     Description: "VPC stack name"
+
+  AlbStackName:
+    Type: String
+    MinLength: 1
+    MaxLength: 20
+    AllowedPattern: "^[a-zA-Z][-a-zA-Z0-9]*$"
+    Description: "Application Load Balancer stack name"
 
   EcsAmiId:
     Type: String
@@ -49,7 +53,7 @@ Parameters:
 Resources:
 
   ECSRole:
-    Type: AWS::IAM::Role
+    Type: "AWS::IAM::Role"
     Properties:
       Path: /
       AssumeRolePolicyDocument: |
@@ -64,7 +68,7 @@ Resources:
         - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
 
   InstanceProfile:
-    Type: AWS::IAM::InstanceProfile
+    Type: "AWS::IAM::InstanceProfile"
     Properties:
       Path: /
       Roles:
@@ -73,15 +77,20 @@ Resources:
   SecurityGroup:
     Type: "AWS::EC2::SecurityGroup"
     Properties:
+      GroupName: !Sub "${AWS::StackName}"
       GroupDescription: !Sub ${AWS::StackName}-hosts
       SecurityGroupIngress:
-        - SourceSecurityGroupId: !Ref SourceSecurityGroup
+        - SourceSecurityGroupId:
+            Fn::ImportValue: !Sub "${AlbStackName}-alb-security-group-name"
           IpProtocol: -1
       VpcId:
         Fn::ImportValue: !Sub "${VpcStackName}-vpc-id"
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${AWS::StackName}"
 
   Cluster:
-    Type: AWS::ECS::Cluster
+    Type: "AWS::ECS::Cluster"
     Properties:
       ClusterName: !Sub "ecs-cluster-${AWS::StackName}"
 
@@ -96,27 +105,27 @@ Resources:
       MaxSize: !Ref ClusterSize
       DesiredCapacity: !Ref ClusterSize
       Tags:
-        - Key: Name
-          Value: !Sub ${AWS::StackName} - ECS Host
+        - Key: "Name"
+          Value: !Sub "${AWS::StackName}-ecs-host"
           PropagateAtLaunch: true
     CreationPolicy:
       ResourceSignal:
-        Timeout: PT15M
+        Timeout: "PT15M"
     UpdatePolicy:
       AutoScalingRollingUpdate:
         MinInstancesInService: 1
         MaxBatchSize: 1
-        PauseTime: PT15M
+        PauseTime: "PT15M"
         WaitOnResourceSignals: true
 
   LaunchConfiguration:
-    Type: AWS::AutoScaling::LaunchConfiguration
+    Type: "AWS::AutoScaling::LaunchConfiguration"
     Metadata:
       AWS::CloudFormation::Init:
         config:
           commands:
             01_add_instance_to_cluster:
-                command: !Sub echo ECS_CLUSTER=${Cluster} > /etc/ecs/ecs.config
+                command: !Sub "echo ECS_CLUSTER=${Cluster} > /etc/ecs/ecs.config"
           files:
             "/etc/cfn/cfn-hup.conf":
               mode: 000400
@@ -154,6 +163,7 @@ Resources:
           /opt/aws/bin/cfn-signal -e $? --region ${AWS::Region} --stack ${AWS::StackName} --resource AutoScalingGroup
 
 Outputs:
+
   ClusterName:
     Value: !Ref Cluster
     Export:
