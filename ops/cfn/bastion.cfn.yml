@@ -1,0 +1,121 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+
+# Any code, applications, scripts, templates, proofs of concept,
+# documentation and other items are provided for illustration purposes only.
+#
+# Copyright 2017 Amazon Web Services
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Bastion stack creation prerequisite:  first create an EC2 key pair and a VPC stack.
+# For details about how to connect to a Linux instance in a private subnet via the
+# bastion, see the following AWS blog post:
+# https://aws.amazon.com/blogs/security/securely-connect-to-linux-instances-running-in-a-private-amazon-vpc/
+
+Parameters:
+
+  VpcStackName:
+    Description: Active CloudFormation stack containing VPC resources.
+    Type: String
+    MinLength: 1
+    MaxLength: 255
+    AllowedPattern: "^[a-zA-Z][-a-zA-Z0-9]*$"
+
+  InstanceKeyName:
+    Description: EC2 key pair name for bastion host SSH access
+    Type: String
+    MinLength: 1
+    MaxLength: 255
+    AllowedPattern: "[\\x20-\\x7E]*"
+    Default: "rnzdev"
+    ConstraintDescription: Key pair name can contain only ASCII characters.
+
+  BastionAmiId:
+    Type: String
+    MinLength: 1
+    MaxLength: 30
+    AllowedPattern: "^[a-zA-Z][-a-zA-Z0-9]*$"
+    Default: "ami-c481fad3"
+    Description: " AMI Id - default is us-east-1"
+
+  SshFrom:
+    Description: Limit SSH access to bastion hosts to a CIDR IP block
+    Type: String
+    MinLength: 9
+    MaxLength: 18
+    Default: "0.0.0.0/0"
+
+Resources:
+
+  BastionSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupName: !Sub "${AWS::StackName}"
+      GroupDescription: "Enable access to the bastion host"
+      VpcId:
+        Fn::ImportValue: !Sub "${VpcStackName}-vpc-id"
+      SecurityGroupIngress:
+        - CidrIp: !Ref SshFrom
+          IpProtocol: tcp
+          ToPort: 22
+          FromPort: 22
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          IpProtocol: tcp
+          ToPort: 80
+          FromPort: 80
+      - CidrIp: 0.0.0.0/0
+          IpProtocol: tcp
+          ToPort: 22
+          FromPort: 22
+
+  BastionHost:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      KeyName: !Ref InstanceKeyName
+      ImageId: !Ref BastionAmiId
+      SubnetId:
+        Fn::ImportValue: !Sub "${VpcStackName}-public-subnet-1-id"
+      SecurityGroupIds:
+        - !Ref BastionSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}"
+
+  BastionEip:
+    Type: AWS::EC2::EIP
+    Properties:
+      InstanceId: !Ref BastionHost
+      Domain: vpc
+
+Outputs:
+
+  BastionIp:
+    Description: EIP for bastion host
+    Value: !Ref BastionEip
+    Export:
+      Name: !Sub "${AWS::StackName}-bastion-eip"
+
+  BastionSecurityGroupName:
+    Value: !Ref BastionSecurityGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-bastion-sg-name"
+
+  BastionSecurityGroupId:
+    Value: !GetAtt BastionSecurityGroup.GroupId
+    Export:
+      Name: !Sub "${AWS::StackName}-bastion-sg-id"
+
+
