@@ -75,12 +75,22 @@ Resources:
         {
             "Statement": [{
                 "Effect": "Allow",
-                "Principal": { "Service": [ "ec2.amazonaws.com" ]},
+                "Principal": { "Service": [ "ec2.amazonaws.com" ] },
                 "Action": [ "sts:AssumeRole" ]
             }]
         }
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
+      Policies:
+        - PolicyName: "cloudwatch-logs-create-log-group"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:DescribeLogStreams"
+                Resource: "arn:aws:logs:*:*:*"
 
   InstanceProfile:
     Type: "AWS::IAM::InstanceProfile"
