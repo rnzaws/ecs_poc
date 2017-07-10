@@ -1,0 +1,301 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+
+# Any code, applications, scripts, templates, proofs of concept,
+# documentation and other items are provided for illustration purposes only.
+#
+# Copyright 2017 Amazon Web Services
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+Parameters:
+
+  GitHubSourceRepo:
+    Type: String
+    Default: "ecs-demo-php-simple-app"
+
+  GitHubCfnRepo:
+    Type: String
+    Default: "ecs_poc"
+
+  GitHubBranch:
+    Type: String
+    Default: "master"
+
+  GitHubToken:
+    Type: String
+
+  GitHubUser:
+    Type: String
+    Default: "rnzaws"
+
+  EcsClusterStackName:
+    Type: String
+    MinLength: 1
+    MaxLength: 20
+    AllowedPattern: "^[a-zA-Z][-a-zA-Z0-9]*$"
+    Description: "ECS cluster stack name"
+
+  ServiceStackName:
+    Type: String
+    MinLength: 1
+    MaxLength: 20
+    AllowedPattern: "^[a-zA-Z][-a-zA-Z0-9]*$"
+    Description: "ECS service stack name"
+
+  AlbStackName:
+    Type: String
+    MinLength: 1
+    MaxLength: 20
+    AllowedPattern: "^[a-zA-Z][-a-zA-Z0-9]*$"
+    Description: "Application Load Balancer stack name"
+
+Resources:
+
+  Repository:
+    Type: "AWS::ECR::Repository"
+    #DeletionPolicy: "Retain"
+    Properties:
+      RepositoryName: !Sub "containers-${AWS::StackName}"
+
+  CloudFormationExecutionRole:
+    Type: "AWS::IAM::Role"
+    DeletionPolicy: Retain
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument: |
+        {
+            "Statement": [{
+                "Effect": "Allow",
+                "Principal": { "Service": [ "cloudformation.amazonaws.com" ]},
+                "Action": [ "sts:AssumeRole" ]
+            }]
+        }
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - ecs:*
+                  - ecr:*
+                  - iam:*
+
+  CodeBuildServiceRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument: |
+        {
+            "Statement": [{
+                "Effect": "Allow",
+                "Principal": { "Service": [ "codebuild.amazonaws.com" ]},
+                "Action": [ "sts:AssumeRole" ]
+            }]
+        }
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                  - "ecr:GetAuthorizationToken"
+              - Resource: !Sub arn:aws:s3:::${ArtifactBucket}/*
+                Effect: Allow
+                Action:
+                  - "s3:GetObject"
+                  - "s3:PutObject"
+                  - "s3:GetObjectVersion"
+              - Resource: !Sub "arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/${Repository}"
+                Effect: Allow
+                Action:
+                  - "ecr:GetDownloadUrlForLayer"
+                  - "ecr:BatchGetImage"
+                  - "ecr:BatchCheckLayerAvailability"
+                  - "ecr:PutImage"
+                  - "ecr:InitiateLayerUpload"
+                  - "ecr:UploadLayerPart"
+                  - "ecr:CompleteLayerUpload"
+
+  CodePipelineServiceRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument: |
+        {
+            "Statement": [{
+                "Effect": "Allow",
+                "Principal": { "Service": [ "codepipeline.amazonaws.com" ]},
+                "Action": [ "sts:AssumeRole" ]
+            }]
+        }
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource:
+                  - !Sub "arn:aws:s3:::${ArtifactBucket}/*"
+                Effect: Allow
+                Action:
+                  - "s3:PutObject"
+                  - "s3:GetObject"
+                  - "s3:GetObjectVersion"
+                  - "s3:GetBucketVersioning"
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - "codebuild:StartBuild"
+                  - "codebuild:BatchGetBuilds"
+                  - "cloudformation:*"
+                  - "iam:PassRole"
+
+  ArtifactBucket:
+    Type: "AWS::S3::Bucket"
+    #DeletionPolicy: Retain
+
+  CodeBuildProject:
+    Type: "AWS::CodeBuild::Project"
+    Properties:
+      Artifacts:
+        Location: !Ref ArtifactBucket
+        Type: "S3"
+      Source:
+        Location: !Sub "${ArtifactBucket}/source.zip"
+        Type: "S3"
+        BuildSpec: |
+          version: 0.2
+          phases:
+            pre_build:
+              commands:
+                - $(aws ecr get-login)
+                - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
+            build:
+              commands:
+                - docker build --tag "${REPOSITORY_URI}:${TAG}" .
+            post_build:
+              commands:
+                - docker push "${REPOSITORY_URI}:${TAG}"
+                - printf '{"tag":"%s"}' $TAG > build.json
+          artifacts:
+            files: build.json
+      Environment:
+        ComputeType: "BUILD_GENERAL1_SMALL"
+        Image: "aws/codebuild/docker:1.12.1"
+        Type: "LINUX_CONTAINER"
+        EnvironmentVariables:
+          - Name: AWS_DEFAULT_REGION
+            Value: !Ref AWS::Region
+          - Name: REPOSITORY_URI
+            Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}"
+      Name: !Ref AWS::StackName
+      ServiceRole: !Ref CodeBuildServiceRole
+
+  Pipeline:
+    Type: "AWS::CodePipeline::Pipeline"
+    Properties:
+      RoleArn: !GetAtt CodePipelineServiceRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ArtifactBucket
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: App
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Version: 1
+                Provider: GitHub
+              Configuration:
+                Owner: !Ref GitHubUser
+                Repo: !Ref GitHubSourceRepo
+                Branch: !Ref GitHubBranch
+                OAuthToken: !Ref GitHubToken
+              OutputArtifacts:
+                - Name: App
+              RunOrder: 1
+            - Name: Template
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Version: 1
+                Provider: GitHub
+              OutputArtifacts:
+                - Name: Template
+              RunOrder: 1
+              Configuration:
+                Owner: !Ref GitHubUser
+                Repo: !Ref GitHubCfnRepo
+                Branch: !Ref GitHubBranch
+                OAuthToken: !Ref GitHubToken
+        - Name: Build
+          Actions:
+            - Name: Build
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref CodeBuildProject
+              InputArtifacts:
+                - Name: App
+              OutputArtifacts:
+                - Name: BuildOutput
+              RunOrder: 1
+        - Name: Deploy
+          Actions:
+            - Name: Deploy
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CloudFormation
+              Configuration:
+                ChangeSetName: Deploy
+                ActionMode: "CREATE_UPDATE"
+                StackName: !Sub "${ServiceStackName}"
+                Capabilities: "CAPABILITY_NAMED_IAM"
+                TemplatePath: Template::ops/cfn//service.cfn.yml
+                RoleArn: !GetAtt CloudFormationExecutionRole.Arn
+                ParameterOverrides: !Sub |
+                  {
+                    "Tag" : { "Fn::GetParam" : [ "BuildOutput", "build.json", "tag" ] },
+                    "DesiredCount": "1",
+                    "EcsClusterName": Fn::ImportValue: !Sub "${EcsClusterStackName}-ecs-cluster-name",
+                    "CiRepositoryName": "${Repository}",
+                    "TargetGroupArn": Fn::ImportValue: !Sub "${AlbStackName}-base-target-group-arn",
+                  }
+              InputArtifacts:
+                - Name: Template
+                - Name: BuildOutput
+              RunOrder: 1
+
+Outputs:
+
+  RepositoryName:
+    Value: !Ref Repository
+    Export:
+      Name: !Sub "${AWS::StackName}-repository-name"
+
+  PipelineUrl:
+    Value: !Sub "https://console.aws.amazon.com/codepipeline/home?region=${AWS::Region}#/view/${Pipeline}"
+
