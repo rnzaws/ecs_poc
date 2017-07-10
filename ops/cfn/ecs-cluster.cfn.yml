@@ -230,6 +230,7 @@ Resources:
       ImageId: !Ref EcsAmiId
       InstanceType: !Ref InstanceType
       IamInstanceProfile: !Ref InstanceProfile
+      InstanceMonitoring: true
       KeyName: !Ref InstanceKeyName
       SecurityGroups:
         - !Ref SecurityGroup
@@ -240,10 +241,88 @@ Resources:
           /opt/aws/bin/cfn-init -v --region ${AWS::Region} --stack ${AWS::StackName} --resource LaunchConfiguration
           /opt/aws/bin/cfn-signal -e $? --region ${AWS::Region} --stack ${AWS::StackName} --resource AutoScalingGroup
 
+  TaskStateChangeTopic:
+    Type: "AWS::SNS::Topic"
+    Properties:
+      DisplayName: !Sub "task-state-change-${AWS::StackName}"
+      TopicName: !Sub "task-state-change-${AWS::StackName}"
+
+  ContainerInstanceStateChangeTopic:
+    Type: "AWS::SNS::Topic"
+    Properties:
+      DisplayName: !Sub "container-instance-state-change-${AWS::StackName}"
+      TopicName: !Sub "container-instance-state-change-${AWS::StackName}"
+
+  TaskStateChangeEventRule:
+    Type: "AWS::Events::Rule"
+    Properties:
+      Description: !Sub "TaskStateChangeEventRule-${AWS::StackName}"
+      EventPattern:
+        source:
+          - "aws.ecs"
+        detail-type:
+          - "ECS Task State Change"
+        detail:
+          clusterArn:
+            - !Sub "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:cluster/${Cluster}"
+      State: "ENABLED"
+      Targets:
+        - Arn: !Ref TaskStateChangeTopic
+          Id: !Sub "task-state-change-target-${AWS::StackName}"
+    DependsOn:
+      - Cluster
+      - TaskStateChangeTopic
+
+  ContainerInstanceStateChangeEventRule:
+    Type: "AWS::Events::Rule"
+    Properties:
+      Description: !Sub "ContainerInstanceStateChangeEventRule-${AWS::StackName}"
+      EventPattern:
+        source:
+          - "aws.ecs"
+        detail-type:
+          - "ECS Container Instance State Change"
+        detail:
+          clusterArn:
+            - !Sub "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:cluster/${Cluster}"
+      State: "ENABLED"
+      Targets:
+        - Arn: !Ref ContainerInstanceStateChangeTopic
+          Id: !Sub "container-instance-state-change-target-${AWS::StackName}"
+    DependsOn:
+      - Cluster
+      - ContainerInstanceStateChangeTopic
+
 Outputs:
 
   ClusterName:
     Value: !Ref Cluster
     Export:
       Name: !Sub "${AWS::StackName}-ecs-cluster-name"
+
+  ClusterArn:
+    Value: !Sub "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:cluster/${Cluster}"
+    Export:
+      Name: !Sub "${AWS::StackName}-ecs-cluster-arn"
+
+  TaskStateChangeTopicArn:
+    Value: !Ref TaskStateChangeTopic
+    Export:
+      Name: !Sub "${AWS::StackName}-task-state-change-topic-arn"
+
+  TaskStateChangeTopicName:
+    Value: !GetAtt TaskStateChangeTopic.TopicName
+    Export:
+      Name: !Sub "${AWS::StackName}-task-state-change-topic-name"
+
+  ContainerInstanceStateChangeTopicArn:
+    Value: !Ref ContainerInstanceStateChangeTopic
+    Export:
+      Name: !Sub "${AWS::StackName}-container-instance-state-change-topic-arn"
+
+  ContainerInstanceStateChangeTopicName:
+    Value: !GetAtt ContainerInstanceStateChangeTopic.TopicName
+    Export:
+      Name: !Sub "${AWS::StackName}-container-instance-state-change-topic-name"
+
 
