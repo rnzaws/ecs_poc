@@ -210,6 +210,12 @@ Outputs:
     Export:
       Name: !Sub "${AWS::StackName}-vpc-id"
 
+  VpcCidr:
+    Description: Vpc cidr block
+    Value: !FindInMap [ CidrMap, Vpc, Cidr ]
+    Export:
+      Name: !Sub "${AWS::StackName}-vpc-cidr"
+
   PublicSubnet1:
     Description: Public subnet 1 id
     Value: !Ref PublicSubnet1
@@ -233,5 +239,4 @@ Outputs:
     Value: !Ref PrivateSubnet2
     Export:
       Name: !Sub "${AWS::StackName}-private-subnet-2-id"
-
 

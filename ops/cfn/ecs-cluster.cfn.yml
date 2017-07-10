@@ -22,7 +22,7 @@ Parameters:
 
   InstanceType:
     Type: String
-    Default: t2.large
+    Default: "t2.large"
 
   ClusterSize:
     Type: Number
@@ -34,6 +34,21 @@ Parameters:
     MaxLength: 20
     AllowedPattern: "^[a-zA-Z][-a-zA-Z0-9]*$"
     Description: "VPC stack name"
+
+  BastionStackName:
+    Type: String
+    MinLength: 1
+    MaxLength: 20
+    AllowedPattern: "^[a-zA-Z][-a-zA-Z0-9]*$"
+    Description: "Bastion stack name"
+
+  InstanceKeyName:
+    Type: String
+    MinLength: 1
+    MaxLength: 20
+    AllowedPattern: "^[a-zA-Z][-a-zA-Z0-9]*$"
+    Description: "Instance ssh key name"
+    Default: "rnzdev"
 
   AlbStackName:
     Type: String
@@ -48,11 +63,11 @@ Parameters:
     MaxLength: 30
     AllowedPattern: "^[a-zA-Z][-a-zA-Z0-9]*$"
     Default: "ami-6df8fe7a"
-    Description: "ECS AMI Id - default is us-east-1"
+    Description: " AMI Id - default is us-east-1"
 
 Resources:
 
-  ECSRole:
+  Role:
     Type: "AWS::IAM::Role"
     Properties:
       Path: /
@@ -72,7 +87,7 @@ Resources:
     Properties:
       Path: /
       Roles:
-        - !Ref ECSRole
+        - !Ref Role
 
   SecurityGroup:
     Type: "AWS::EC2::SecurityGroup"
@@ -81,8 +96,13 @@ Resources:
       GroupDescription: !Sub ${AWS::StackName}-hosts
       SecurityGroupIngress:
         - SourceSecurityGroupId:
-            Fn::ImportValue: !Sub "${AlbStackName}-alb-security-group-name"
+            Fn::ImportValue: !Sub "${AlbStackName}-alb-security-group-id"
           IpProtocol: -1
+        - SourceSecurityGroupId:
+            Fn::ImportValue: !Sub "${BastionStackName}-bastion-sg-id"
+          IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
       VpcId:
         Fn::ImportValue: !Sub "${VpcStackName}-vpc-id"
       Tags:
@@ -125,8 +145,50 @@ Resources:
         config:
           commands:
             01_add_instance_to_cluster:
-                command: !Sub "echo ECS_CLUSTER=${Cluster} > /etc/ecs/ecs.config"
+                command: !Sub "echo _CLUSTER=${Cluster} > /etc/ecs/ecs.config"
           files:
+            "/etc/awslogs/awslogs.conf":
+              mode: 000400
+              owner: root
+              group: root
+              content: !Sub |
+                [general]
+                state_file = /var/lib/awslogs/agent-state
+
+                [/var/log/dmesg]
+                file = /var/log/dmesg
+                log_group_name = /var/log/dmesg
+                log_stream_name = ${Cluster}/{instance_id}
+
+                [/var/log/messages]
+                file = /var/log/messages
+                log_group_name = /var/log/messages
+                log_stream_name = ${Cluster}/{instance_id}
+                datetime_format = %b %d %H:%M:%S
+
+                [/var/log/docker]
+                file = /var/log/docker
+                log_group_name = /var/log/docker
+                log_stream_name = ${Cluster}/{instance_id}
+                datetime_format = %Y-%m-%dT%H:%M:%S.%f
+
+                [/var/log/ecs/ecs-init.log]
+                file = /var/log/ecs/ecs-init.log.*
+                log_group_name = /var/log/ecs/ecs-init.log
+                log_stream_name = ${Cluster}/{instance_id}
+                datetime_format = %Y-%m-%dT%H:%M:%SZ
+
+                [/var/log/ecs/ecs-agent.log]
+                file = /var/log/ecs/ecs-agent.log.*
+                log_group_name = /var/log/ecs/ecs-agent.log
+                log_stream_name = ${Cluster}/{instance_id}
+                datetime_format = %Y-%m-%dT%H:%M:%SZ
+
+                [/var/log/ecs/audit.log]
+                file = /var/log/ecs/audit.log.*
+                log_group_name = /var/log/ecs/audit.log
+                log_stream_name = ${Cluster}/{instance_id}
+                datetime_format = %Y-%m-%dT%H:%M:%SZ
             "/etc/cfn/cfn-hup.conf":
               mode: 000400
               owner: root
@@ -149,16 +211,22 @@ Resources:
                 files:
                   - /etc/cfn/cfn-hup.conf
                   - /etc/cfn/hooks.d/cfn-auto-reloader.conf
+              awslogs:
+                enabled: true
+                ensureRunning: true
+                files:
+                  - /etc/awslogs/awslogs.conf
     Properties:
       ImageId: !Ref EcsAmiId
       InstanceType: !Ref InstanceType
       IamInstanceProfile: !Ref InstanceProfile
+      KeyName: !Ref InstanceKeyName
       SecurityGroups:
         - !Ref SecurityGroup
       UserData:
         "Fn::Base64": !Sub |
           #!/bin/bash
-          yum install -y aws-cfn-bootstrap
+          yum install -y aws-cfn-bootstrap awslogs jq
           /opt/aws/bin/cfn-init -v --region ${AWS::Region} --stack ${AWS::StackName} --resource LaunchConfiguration
           /opt/aws/bin/cfn-signal -e $? --region ${AWS::Region} --stack ${AWS::StackName} --resource AutoScalingGroup
 
