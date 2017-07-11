@@ -110,7 +110,9 @@ Resources:
       Actions:
         - TargetGroupArn: !Ref BaseTargetGroup
           Type: forward
-    DependsOn: LoadBalancerListener
+    DependsOn:
+      - LoadBalancerListener
+      - BaseTargetGroup
 
   AlbCname:
     Type: "AWS::Route53::RecordSet"
