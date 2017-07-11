@@ -155,7 +155,7 @@ Resources:
         config:
           commands:
             01_add_instance_to_cluster:
-                command: !Sub "echo _CLUSTER=${Cluster} > /etc/ecs/ecs.config"
+                command: !Sub "echo ECS_CLUSTER=${Cluster} > /etc/ecs/ecs.config"
           files:
             "/etc/awslogs/awslogs.conf":
               mode: 000400
