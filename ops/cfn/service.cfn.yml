@@ -84,7 +84,7 @@ Resources:
       Family: !Sub ${AWS::StackName}-simple-app
       ContainerDefinitions:
         - Name: simple-app
-          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${CiRepositoryName}:${Tag}",
+          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${CiRepositoryName}:${Tag}"
           EntryPoint:
             - /usr/sbin/apache2
             - -D
