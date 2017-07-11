@@ -32,21 +32,18 @@ Parameters:
     Type: String
     MinLength: 1
     MaxLength: 50
-    AllowedPattern: "^[a-zA-Z][-a-zA-Z0-9]*$"
     Description: "ECS cluster name"
 
   CiRepositoryName:
     Type: String
     MinLength: 1
     MaxLength: 50
-    AllowedPattern: "^[a-zA-Z][-a-zA-Z0-9]*$"
     Description: "CI/CD repository name"
 
   TargetGroupArn:
     Type: String
     MinLength: 1
     MaxLength: 255
-    AllowedPattern: "^[a-zA-Z][-a-zA-Z0-9]*$"
     Description: "Target group arn"
 
 Resources:
