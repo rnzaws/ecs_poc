@@ -64,13 +64,13 @@ Resources:
 
   Repository:
     Type: "AWS::ECR::Repository"
-    #DeletionPolicy: "Retain"
+    DeletionPolicy: "Delete"
     Properties:
       RepositoryName: !Sub "containers-${AWS::StackName}"
 
   CloudFormationExecutionRole:
     Type: "AWS::IAM::Role"
-    DeletionPolicy: Retain
+    DeletionPolicy: Delete
     Properties:
       Path: /
       AssumeRolePolicyDocument: |
@@ -169,7 +169,7 @@ Resources:
 
   ArtifactBucket:
     Type: "AWS::S3::Bucket"
-    #DeletionPolicy: Retain
+    DeletionPolicy: Delete
 
   CodeBuildProject:
     Type: "AWS::CodeBuild::Project"
@@ -276,14 +276,22 @@ Resources:
                 Capabilities: "CAPABILITY_NAMED_IAM"
                 TemplatePath: Template::ops/cfn//service.cfn.yml
                 RoleArn: !GetAtt CloudFormationExecutionRole.Arn
-                ParameterOverrides: !Sub |
-                  {
-                    "Tag" : { "Fn::GetParam" : [ "BuildOutput", "build.json", "tag" ] },
-                    "DesiredCount": "1",
-                    "EcsClusterName": Fn::ImportValue: !Sub "${EcsClusterStackName}-ecs-cluster-name",
-                    "CiRepositoryName": "${Repository}",
-                    "TargetGroupArn": Fn::ImportValue: !Sub "${AlbStackName}-base-target-group-arn",
-                  }
+                ParameterOverrides:
+                  Fn:Sub:
+                    - |
+                    {
+                      "Tag" : { "Fn::GetParam" : [ "BuildOutput", "build.json", "tag" ] },
+                      "DesiredCount": "1",
+                      "EcsClusterName": "${EcsClusterName}",
+                      "CiRepositoryName": "${Repository}",
+                      "TargetGroupArn": "${TargetGroupArn}"
+                    }
+                    - {
+                        TargetGroupArn:
+                          Fn::ImportValue: !Sub "${AlbStackName}-base-target-group-arn",
+                        CiRepositoryName:
+                            Fn::ImportValue: !Sub "${EcsClusterStackName}-ecs-cluster-name"
+                      }
               InputArtifacts:
                 - Name: Template
                 - Name: BuildOutput
