@@ -78,7 +78,7 @@ Resources:
   TaskDefinition:
     Type: "AWS::ECS::TaskDefinition"
     Properties:
-      Family: !Sub ${AWS::StackName}-simple-app
+      Family: !Sub "${AWS::StackName}-simple-app"
       ContainerDefinitions:
         - Name: simple-app
           Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${CiRepositoryName}:${Tag}"
