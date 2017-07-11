@@ -274,7 +274,7 @@ Resources:
                 ActionMode: "CREATE_UPDATE"
                 StackName: !Sub "${ServiceStackName}"
                 Capabilities: "CAPABILITY_NAMED_IAM"
-                TemplatePath: Template::ops/cfn//service.cfn.yml
+                TemplatePath: Template::ops/cfn/service.cfn.yml
                 RoleArn: !GetAtt CloudFormationExecutionRole.Arn
                 ParameterOverrides: !Sub
                   - |
