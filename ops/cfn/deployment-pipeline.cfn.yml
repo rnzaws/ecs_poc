@@ -24,10 +24,6 @@ Parameters:
     Type: String
     Default: "ecs-demo-php-simple-app"
 
-  GitHubCfnRepo:
-    Type: String
-    Default: "ecs_poc"
-
   GitHubBranch:
     Type: String
     Default: "master"
@@ -232,20 +228,6 @@ Resources:
               OutputArtifacts:
                 - Name: App
               RunOrder: 1
-            - Name: Template
-              ActionTypeId:
-                Category: Source
-                Owner: ThirdParty
-                Version: 1
-                Provider: GitHub
-              OutputArtifacts:
-                - Name: Template
-              RunOrder: 1
-              Configuration:
-                Owner: !Ref GitHubUser
-                Repo: !Ref GitHubCfnRepo
-                Branch: !Ref GitHubBranch
-                OAuthToken: !Ref GitHubToken
         - Name: Build
           Actions:
             - Name: Build
@@ -274,7 +256,7 @@ Resources:
                 ActionMode: "CREATE_UPDATE"
                 StackName: !Sub "${ServiceStackName}"
                 Capabilities: "CAPABILITY_NAMED_IAM"
-                TemplatePath: Template::ops/cfn/service.cfn.yml
+                TemplatePath: App::ops/cfn/service.cfn.yml
                 RoleArn: !GetAtt CloudFormationExecutionRole.Arn
                 ParameterOverrides: !Sub
                   - |
@@ -290,7 +272,7 @@ Resources:
                     EcsClusterName:
                       "Fn::ImportValue": !Sub "${EcsClusterStackName}-ecs-cluster-name"
               InputArtifacts:
-                - Name: Template
+                - Name: App
                 - Name: BuildOutput
               RunOrder: 1
 
