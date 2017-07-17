@@ -28,6 +28,10 @@ Parameters:
     Type: String
     Default: "master"
 
+  DesiredCount:
+    Type: Number
+    Default: 1
+
   GitHubToken:
     Type: String
 
@@ -265,7 +269,7 @@ Resources:
                     {
                       "TaskName": "${TaskName}",
                       "Tag" : { "Fn::GetParam" : [ "BuildOutput", "build.json", "tag" ] },
-                      "DesiredCount": "1",
+                      "DesiredCount": "${DesiredCount}",
                       "EcsClusterName": "${EcsClusterName}",
                       "CiRepositoryName": "${CiRepositoryName}",
                       "LoadBalancerListenerArn": "${LoadBalancerListenerArn}",
