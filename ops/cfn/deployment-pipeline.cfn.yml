@@ -35,34 +35,45 @@ Parameters:
     Type: String
     Default: "rnzaws"
 
+  BuildDockerImage:
+    Type: String
+    Default: "aws/codebuild/docker:1.12.1"
+
+  TaskName:
+    Type: String
+    Default: "default"
+
   EcsClusterStackName:
     Type: String
     MinLength: 1
-    MaxLength: 20
-    AllowedPattern: "^[a-zA-Z][-a-zA-Z0-9]*$"
+    MaxLength: 100
     Description: "ECS cluster stack name"
+
+  VpcStackName:
+    Type: String
+    MinLength: 1
+    MaxLength: 100
+    Description: "Vpc stack name"
 
   ServiceStackName:
     Type: String
     MinLength: 1
-    MaxLength: 20
-    AllowedPattern: "^[a-zA-Z][-a-zA-Z0-9]*$"
+    MaxLength: 100
     Description: "ECS service stack name"
 
   AlbStackName:
     Type: String
     MinLength: 1
-    MaxLength: 20
-    AllowedPattern: "^[a-zA-Z][-a-zA-Z0-9]*$"
+    MaxLength: 100
     Description: "Application Load Balancer stack name"
 
-Resources:
+  CiRepositoryStackName:
+    Type: String
+    MinLength: 1
+    MaxLength: 100
+    Description: "CI repostiory stack name"
 
-  Repository:
-    Type: "AWS::ECR::Repository"
-    DeletionPolicy: "Delete"
-    Properties:
-      RepositoryName: !Sub "containers-${AWS::StackName}"
+Resources:
 
   CloudFormationExecutionRole:
     Type: "AWS::IAM::Role"
@@ -119,7 +130,10 @@ Resources:
                   - "s3:GetObject"
                   - "s3:PutObject"
                   - "s3:GetObjectVersion"
-              - Resource: !Sub "arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/${Repository}"
+              - Resource: !Sub
+                  - "arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/${RepositoryName}"
+                  - RepositoryName:
+                      "Fn::ImportValue": !Sub "${CiRepositoryStackName}-repository-name"
                 Effect: Allow
                 Action:
                   - "ecr:GetDownloadUrlForLayer"
@@ -176,31 +190,18 @@ Resources:
       Source:
         Location: !Sub "${ArtifactBucket}/source.zip"
         Type: "S3"
-        BuildSpec: |
-          version: 0.2
-          phases:
-            pre_build:
-              commands:
-                - $(aws ecr get-login)
-                - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
-            build:
-              commands:
-                - docker build --tag "${REPOSITORY_URI}:${TAG}" .
-            post_build:
-              commands:
-                - docker push "${REPOSITORY_URI}:${TAG}"
-                - printf '{"tag":"%s"}' $TAG > build.json
-          artifacts:
-            files: build.json
       Environment:
         ComputeType: "BUILD_GENERAL1_SMALL"
-        Image: "aws/codebuild/docker:1.12.1"
+        Image: !Ref BuildDockerImage
         Type: "LINUX_CONTAINER"
         EnvironmentVariables:
           - Name: AWS_DEFAULT_REGION
             Value: !Ref AWS::Region
           - Name: REPOSITORY_URI
-            Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}"
+            Value: !Sub
+              - "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${RepositoryName}"
+              - RepositoryName:
+                    "Fn::ImportValue": !Sub "${CiRepositoryStackName}-repository-name"
       Name: !Ref AWS::StackName
       ServiceRole: !Ref CodeBuildServiceRole
 
@@ -261,16 +262,22 @@ Resources:
                 ParameterOverrides: !Sub
                   - |
                     {
+                      "TaskName": "${TaskName}",
                       "Tag" : { "Fn::GetParam" : [ "BuildOutput", "build.json", "tag" ] },
                       "DesiredCount": "1",
                       "EcsClusterName": "${EcsClusterName}",
-                      "CiRepositoryName": "${Repository}",
-                      "TargetGroupArn": "${TargetGroupArn}"
+                      "CiRepositoryName": "${CiRepositoryName}",
+                      "LoadBalancerListenerArn": "${LoadBalancerListenerArn}",
+                      "VpcId": "${VpcId}"
                     }
-                  - TargetGroupArn:
-                        "Fn::ImportValue": !Sub "${AlbStackName}-base-target-group-arn"
-                    EcsClusterName:
+                  - EcsClusterName:
                       "Fn::ImportValue": !Sub "${EcsClusterStackName}-ecs-cluster-name"
+                    CiRepositoryName:
+                      "Fn::ImportValue": !Sub "${CiRepositoryStackName}-repository-name"
+                    LoadBalancerListenerArn:
+                      "Fn::ImportValue": !Sub "${AlbStackName}-alb-listener-arn"
+                    VpcId:
+                      "Fn::ImportValue": !Sub "${VpcStackName}-vpc-id"
               InputArtifacts:
                 - Name: App
                 - Name: BuildOutput
@@ -278,11 +285,10 @@ Resources:
 
 Outputs:
 
-  RepositoryName:
-    Value: !Ref Repository
-    Export:
-      Name: !Sub "${AWS::StackName}-repository-name"
-
   PipelineUrl:
     Value: !Sub "https://console.aws.amazon.com/codepipeline/home?region=${AWS::Region}#/view/${Pipeline}"
+    Export:
+      Name: !Sub "${AWS::StackName}-pipeline-url"
+
+
 
