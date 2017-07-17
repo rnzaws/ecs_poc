@@ -87,9 +87,10 @@ Resources:
       Port: 8404
       Protocol: HTTP
       Matcher:
-        HttpCode: 200-299
+        HttpCode: 404
       HealthCheckIntervalSeconds: 10
       HealthCheckPath: /
+      HealthCheckPort: 8404
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2
