@@ -96,9 +96,10 @@ Resources:
               - Resource: "*"
                 Effect: Allow
                 Action:
-                  - ecs:*
-                  - ecr:*
-                  - iam:*
+                  - "ecs:*"
+                  - "ecr:*"
+                  - "iam:*"
+                  - "elasticloadbalancing:*"
 
   CodeBuildServiceRole:
     Type: "AWS::IAM::Role"
@@ -268,7 +269,8 @@ Resources:
                       "EcsClusterName": "${EcsClusterName}",
                       "CiRepositoryName": "${CiRepositoryName}",
                       "LoadBalancerListenerArn": "${LoadBalancerListenerArn}",
-                      "VpcId": "${VpcId}"
+                      "VpcId": "${VpcId}",
+                      "TargetGroupArn": "${TargetGroupArn}"
                     }
                   - EcsClusterName:
                       "Fn::ImportValue": !Sub "${EcsClusterStackName}-ecs-cluster-name"
@@ -276,6 +278,8 @@ Resources:
                       "Fn::ImportValue": !Sub "${CiRepositoryStackName}-repository-name"
                     LoadBalancerListenerArn:
                       "Fn::ImportValue": !Sub "${AlbStackName}-alb-listener-arn"
+                    TargetGroupArn:
+                      "Fn::ImportValue": !Sub "${AlbStackName}-not-found-target-group-arn"
                     VpcId:
                       "Fn::ImportValue": !Sub "${VpcStackName}-vpc-id"
               InputArtifacts:
