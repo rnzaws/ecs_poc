@@ -84,7 +84,7 @@ Resources:
       Name: !Sub "${AWS::StackName}-not-found-tg"
       VpcId:
         Fn::ImportValue: !Sub "${VpcStackName}-vpc-id"
-      Port: 80
+      Port: 8404
       Protocol: HTTP
       Matcher:
         HttpCode: 200-299
