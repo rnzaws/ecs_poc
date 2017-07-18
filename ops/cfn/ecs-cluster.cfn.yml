@@ -253,6 +253,24 @@ Resources:
       DisplayName: !Sub "container-instance-state-change-${AWS::StackName}"
       TopicName: !Sub "container-instance-state-change-${AWS::StackName}"
 
+  CloudWatchEventsTopicPolicy:
+    Type: "AWS::SNS::TopicPolicy"
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Action: "sns:Publish"
+            Principal:
+              Service:
+                - "events.amazonaws.com"
+      Topics:
+        - !Ref TaskStateChangeTopic
+        - !Ref ContainerInstanceStateChangeTopic
+    DependsOn:
+      - TaskStateChangeTopic
+      - ContainerInstanceStateChangeTopic
+
   TaskStateChangeEventRule:
     Type: "AWS::Events::Rule"
     Properties:
