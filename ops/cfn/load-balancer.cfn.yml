@@ -84,13 +84,12 @@ Resources:
       Name: !Sub "${AWS::StackName}-not-found-tg"
       VpcId:
         Fn::ImportValue: !Sub "${VpcStackName}-vpc-id"
-      Port: 8404
+      Port: 80
       Protocol: HTTP
       Matcher:
         HttpCode: 404
       HealthCheckIntervalSeconds: 10
       HealthCheckPath: /
-      HealthCheckPort: 8404
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2
