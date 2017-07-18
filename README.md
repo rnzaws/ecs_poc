@@ -1,3 +1,4 @@
+# ECS POC
 
 This is a simple POC to showcase deploying a basic ECS cluster.
 
