@@ -12,11 +12,12 @@ BOOTSTRAP_BUCKET=$(aws cloudformation describe-stacks --stack-name system-bootst
 
 aws cloudformation create-stack --stack-name system-vpc-$APP_ENV --template-body file://ops/cfn/vpc.cfn.yml
 
+aws cloudformation wait stack-create-complete --stack-name system-vpc-$APP_ENV
+
 aws cloudformation create-stack --stack-name system-ci-repository-$APP_ENV --template-body file://ops/cfn/ci-repository.cfn.yml
 
 aws cloudformation wait stack-create-complete --stack-name system-ci-repository-$APP_ENV
 
-aws cloudformation wait stack-create-complete --stack-name system-vpc-$APP_ENV
 
 aws cloudformation create-stack --stack-name system-bastion-$APP_ENV --template-body file://ops/cfn/bastion.cfn.yml \
   --parameters ParameterKey=VpcStackName,ParameterValue=system-vpc-$APP_ENV
@@ -37,7 +38,7 @@ aws cloudformation create-stack --stack-name app-ecs-$APP_ENV --template-body fi
 aws cloudformation wait stack-create-complete --stack-name app-ecs-$APP_ENV
 
 #
-# Create a CodePipeline for each service. Each app/service must have a buildspec.yml and ops/cfn/service.cfn.yml file
+# Create a CodePipeline for each service. Each app/service must have a buildspec.yml and ops/cfn/service.cfn.yml file in the repository.
 #
 
 aws cloudformation create-stack --stack-name not-found-ci-$APP_ENV --template-body file://ops/cfn/deployment-pipeline.cfn.yml --capabilities CAPABILITY_NAMED_IAM \
@@ -52,7 +53,7 @@ aws cloudformation create-stack --stack-name not-found-ci-$APP_ENV --template-bo
     ParameterKey=TaskName,ParameterValue=not-found-$APP_ENV \
     ParameterKey=DesiredCount,ParameterValue=2
 
-aws cloudformation wait stack-create-complete --stack-name app-ci-$APP_ENV
+aws cloudformation wait stack-create-complete --stack-name not-found-ci-$APP_ENV
 
 aws cloudformation create-stack --stack-name sample-app-ci-$APP_ENV --template-body file://ops/cfn/deployment-pipeline.cfn.yml --capabilities CAPABILITY_NAMED_IAM \
   --parameters \
@@ -66,6 +67,6 @@ aws cloudformation create-stack --stack-name sample-app-ci-$APP_ENV --template-b
     ParameterKey=TaskName,ParameterValue=sample-app-$APP_ENV \
     ParameterKey=DesiredCount,ParameterValue=2
 
-aws cloudformation wait stack-create-complete --stack-name app-ci-$APP_ENV
+aws cloudformation wait stack-create-complete --stack-name sample-app-ci-$APP_ENV
 
 
