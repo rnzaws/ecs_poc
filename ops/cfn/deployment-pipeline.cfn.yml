@@ -268,7 +268,7 @@ Resources:
                   - |
                     {
                       "TaskName": "${TaskName}",
-                      "Tag" : { "Fn::GetParam" : [ "BuildOutput", "build.json", "tag" ] },
+                      "Tag": { "Fn::GetParam" : [ "BuildOutput", "build.json", "tag" ] },
                       "DesiredCount": "${DesiredCount}",
                       "EcsClusterName": "${EcsClusterName}",
                       "CiRepositoryName": "${CiRepositoryName}",
