@@ -35,7 +35,6 @@ aws cloudformation create-stack --stack-name system-ci-repository-$APP_ENV --tem
 
 aws cloudformation wait stack-create-complete --stack-name system-ci-repository-$APP_ENV
 
-
 aws cloudformation create-stack --stack-name system-bastion-$APP_ENV --template-body file://ops/cfn/bastion.cfn.yml \
   --parameters ParameterKey=VpcStackName,ParameterValue=system-vpc-$APP_ENV
 
@@ -55,35 +54,29 @@ aws cloudformation create-stack --stack-name app-ecs-$APP_ENV --template-body fi
 aws cloudformation wait stack-create-complete --stack-name app-ecs-$APP_ENV
 
 #
-# Create a CodePipeline for each service. Each app/service must have a buildspec.yml and ops/cfn/service.cfn.yml file in the repository.
+# Long repo names cause problems with declarative attribute names (max string lengths for some attributes in CFN templates).
+# Keep your repo names someowhat short.
 #
+service_github_repos=(404 php-hello)
 
-aws cloudformation create-stack --stack-name not-found-ci-$APP_ENV --template-body file://ops/cfn/deployment-pipeline.cfn.yml --capabilities CAPABILITY_NAMED_IAM \
-  --parameters \
-    ParameterKey=EcsClusterStackName,ParameterValue=app-ecs-$APP_ENV \
-    ParameterKey=AlbStackName,ParameterValue=app-alb-$APP_ENV \
-    ParameterKey=VpcStackName,ParameterValue=system-vpc-$APP_ENV \
-    ParameterKey=GitHubSourceRepo,ParameterValue=404 \
-    ParameterKey=ServiceStackName,ParameterValue=not-found-service-$APP_ENV \
-    ParameterKey=CiRepositoryStackName,ParameterValue=system-ci-repository-$APP_ENV \
-    ParameterKey=GitHubToken,ParameterValue=$GITHUB_TOKEN \
-    ParameterKey=TaskName,ParameterValue=not-found-$APP_ENV \
-    ParameterKey=DesiredCount,ParameterValue=2
+#
+# The following services can be broken out to customize their parameters.
+#
+for service_github_repo in ${service_github_repos[*]}
+do
+  aws cloudformation create-stack --stack-name ecs-$service_github_repo-ci-$APP_ENV --template-body file://ops/cfn/deployment-pipeline.cfn.yml --capabilities CAPABILITY_NAMED_IAM \
+    --parameters \
+      ParameterKey=EcsClusterStackName,ParameterValue=app-ecs-$APP_ENV \
+      ParameterKey=AlbStackName,ParameterValue=app-alb-$APP_ENV \
+      ParameterKey=VpcStackName,ParameterValue=system-vpc-$APP_ENV \
+      ParameterKey=GitHubSourceRepo,ParameterValue=$service_github_repo \
+      ParameterKey=ServiceStackName,ParameterValue=ecs-$service_github_repo-service-$APP_ENV \
+      ParameterKey=CiRepositoryStackName,ParameterValue=system-ci-repository-$APP_ENV \
+      ParameterKey=GitHubToken,ParameterValue=$GITHUB_TOKEN \
+      ParameterKey=TaskName,ParameterValue=ecs-$service_github_repo-ci-$APP_ENV \
+      ParameterKey=DesiredCount,ParameterValue=2
+  aws cloudformation wait stack-create-complete --stack-name ecs-$service_github_repo-ci-$APP_ENV &
+done
 
-aws cloudformation wait stack-create-complete --stack-name not-found-ci-$APP_ENV
-
-aws cloudformation create-stack --stack-name sample-app-ci-$APP_ENV --template-body file://ops/cfn/deployment-pipeline.cfn.yml --capabilities CAPABILITY_NAMED_IAM \
-  --parameters \
-    ParameterKey=EcsClusterStackName,ParameterValue=app-ecs-$APP_ENV \
-    ParameterKey=AlbStackName,ParameterValue=app-alb-$APP_ENV \
-    ParameterKey=VpcStackName,ParameterValue=system-vpc-$APP_ENV \
-    ParameterKey=GitHubSourceRepo,ParameterValue=ecs-demo-php-simple-app \
-    ParameterKey=ServiceStackName,ParameterValue=sample-app-service-$APP_ENV \
-    ParameterKey=CiRepositoryStackName,ParameterValue=system-ci-repository-$APP_ENV \
-    ParameterKey=GitHubToken,ParameterValue=$GITHUB_TOKEN \
-    ParameterKey=TaskName,ParameterValue=sample-app-$APP_ENV \
-    ParameterKey=DesiredCount,ParameterValue=2
-
-aws cloudformation wait stack-create-complete --stack-name sample-app-ci-$APP_ENV
-
+wait
 
