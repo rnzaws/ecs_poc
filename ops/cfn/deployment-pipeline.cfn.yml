@@ -37,7 +37,7 @@ Parameters:
 
   GitHubUser:
     Type: String
-    Default: "rnzaws"
+    Default: "rnzsgh"
 
   BuildDockerImage:
     Type: String
@@ -78,6 +78,47 @@ Parameters:
     Description: "CI repostiory stack name"
 
 Resources:
+
+  EcsCloudFormationDeployErrorEventTopic:
+    Type: "AWS::SNS::Topic"
+    Properties:
+      DisplayName: !Sub "ecs-cloud-formation-deploy-error-topic-${AWS::StackName}"
+      TopicName: !Sub "ecs-cloud-formation-deploy-error-topic-${AWS::StackName}"
+
+  EcsCloudFormationDeployErrorEventTopicPolicy:
+    Type: "AWS::SNS::TopicPolicy"
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Action: "sns:Publish"
+            Principal:
+              Service:
+                - "events.amazonaws.com"
+            Resource:
+              - !Ref EcsCloudFormationDeployErrorEventTopic
+      Topics:
+        - !Ref EcsCloudFormationDeployErrorEventTopic
+    DependsOn:
+      - EcsCloudFormationDeployErrorEventTopic
+
+  EcsCloudFormationDeployErrorEventRule:
+    Type: "AWS::Events::Rule"
+    Properties:
+      Description: !Sub "ecs-cloud-formation-ecs-deploy-event-rule-${AWS::StackName}"
+      EventPattern:
+        source:
+          - "aws.cloudformation"
+        detail:
+          clusterArn:
+            - Fn::ImportValue: !Sub "${EcsClusterStackName}-ecs-cluster-arn"
+      State: "ENABLED"
+      Targets:
+        - Arn: !Ref EcsCloudFormationDeployErrorEventTopic
+          Id: !Sub "ecs-cfn-deploy-err-${AWS::StackName}"
+    DependsOn:
+      - EcsCloudFormationDeployErrorEventTopic
 
   CloudFormationExecutionRole:
     Type: "AWS::IAM::Role"
@@ -298,5 +339,14 @@ Outputs:
     Export:
       Name: !Sub "${AWS::StackName}-pipeline-url"
 
+  EcsCloudFormationDeployErrorEventTopicArn:
+    Value: !Ref EcsCloudFormationDeployErrorEventTopic
+    Export:
+      Name: !Sub "${AWS::StackName}-ecs-cloud-formation-deploy-error-event-topic-arn"
+
+  EcsCloudFormationDeployErrorEventTopicName:
+    Value: !GetAtt EcsCloudFormationDeployErrorEventTopic.TopicName
+    Export:
+      Name: !Sub "${AWS::StackName}-ecs-cloud-formation-deploy-error-event-topic-name"
 
 
