@@ -81,7 +81,6 @@ Resources:
   NotFoundTargetGroup:
     Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
     Properties:
-      Name: !Sub "${AWS::StackName}-not-found-tg"
       VpcId:
         Fn::ImportValue: !Sub "${VpcStackName}-vpc-id"
       Port: 80
