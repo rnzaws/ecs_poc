@@ -83,7 +83,11 @@ Resources:
     Type: "AWS::SNS::Topic"
     Properties:
       DisplayName: !Sub "ecs-cloud-formation-deploy-error-topic-${AWS::StackName}"
-      TopicName: !Sub "ecs-cloud-formation-deploy-error-topic-${AWS::StackName}"
+
+  EcsContainerDiedEventTopic:
+    Type: "AWS::SNS::Topic"
+    Properties:
+      DisplayName: !Sub "ecs-container-died-topic-${AWS::StackName}"
 
   EcsCloudFormationDeployErrorEventTopicPolicy:
     Type: "AWS::SNS::TopicPolicy"
@@ -103,23 +107,66 @@ Resources:
     DependsOn:
       - EcsCloudFormationDeployErrorEventTopic
 
+  EcsContainerDiedEventTopicPolicy:
+    Type: "AWS::SNS::TopicPolicy"
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Action: "sns:Publish"
+            Principal:
+              Service:
+                - "events.amazonaws.com"
+            Resource:
+              - !Ref EcsContainerDiedEventTopic
+      Topics:
+        - !Ref EcsContainerDiedEventTopic
+    DependsOn:
+      - EcsContainerDiedEventTopic
+
   EcsCloudFormationDeployErrorEventRule:
     Type: "AWS::Events::Rule"
     Properties:
-      Description: !Sub "ecs-cloud-formation-ecs-deploy-event-rule-${AWS::StackName}"
+      Description: !Sub "ecs-cfn-ecs-deploy-error-event-rule-${AWS::StackName}"
       EventPattern:
         source:
           - "aws.cloudformation"
         detail:
-          clusterArn:
-            - Fn::ImportValue: !Sub "${EcsClusterStackName}-ecs-cluster-arn"
+          userIdentity:
+            sessionContext:
+              sessionIssuer:
+                arn:
+                  - !GetAtt CodePipelineServiceRole.Arn
+            invokedBy:
+              - "codepipeline.amazonaws.com"
+          errorCode:
+            - "AccessDeniedException"
+            - "IncompleteSignature"
+            - "InternalFailure"
+            - "InvalidAction"
+            - "InvalidClientTokenId"
+            - "InvalidParameterCombination"
+            - "InvalidParameterValue"
+            - "InvalidQueryParameter"
+            - "MalformedQueryString"
+            - "MissingAction"
+            - "MissingAuthenticationToken"
+            - "MissingParameter"
+            - "OptInRequired"
+            - "RequestExpired"
+            - "ServiceUnavailable"
+            - "ThrottlingException"
+            - "ValidationError"
       State: "ENABLED"
       Targets:
         - Arn: !Ref EcsCloudFormationDeployErrorEventTopic
           Id: !Sub "ecs-cfn-deploy-err-${AWS::StackName}"
     DependsOn:
       - EcsCloudFormationDeployErrorEventTopic
+      - CodePipelineServiceRole
 
+  # TODO The policies are a little too open here.
   CloudFormationExecutionRole:
     Type: "AWS::IAM::Role"
     DeletionPolicy: Delete
@@ -144,6 +191,7 @@ Resources:
                   - "ecs:*"
                   - "ecr:*"
                   - "iam:*"
+                  - "events:*"
                   - "elasticloadbalancing:*"
 
   CodeBuildServiceRole:
@@ -315,7 +363,8 @@ Resources:
                       "CiRepositoryName": "${CiRepositoryName}",
                       "LoadBalancerListenerArn": "${LoadBalancerListenerArn}",
                       "VpcId": "${VpcId}",
-                      "TargetGroupArn": "${TargetGroupArn}"
+                      "TargetGroupArn": "${TargetGroupArn}",
+                      "DeploymentPipelineStackName": "${AWS::StackName}"
                     }
                   - EcsClusterName:
                       "Fn::ImportValue": !Sub "${EcsClusterStackName}-ecs-cluster-name"
@@ -349,4 +398,13 @@ Outputs:
     Export:
       Name: !Sub "${AWS::StackName}-ecs-cloud-formation-deploy-error-event-topic-name"
 
+  EcsContainerDiedEventTopicArn:
+    Value: !Ref EcsContainerDiedEventTopic
+    Export:
+      Name: !Sub "${AWS::StackName}-ecs-container-died-topic-arn"
+
+  EcsContainerDiedEventTopicName:
+    Value: !GetAtt EcsContainerDiedEventTopic.TopicName
+    Export:
+      Name: !Sub "${AWS::StackName}-ecs-container-died-topic-name"
 
