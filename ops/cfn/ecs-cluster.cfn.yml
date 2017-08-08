@@ -245,13 +245,11 @@ Resources:
     Type: "AWS::SNS::Topic"
     Properties:
       DisplayName: !Sub "task-state-change-${AWS::StackName}"
-      TopicName: !Sub "task-state-change-${AWS::StackName}"
 
   ContainerInstanceStateChangeTopic:
     Type: "AWS::SNS::Topic"
     Properties:
       DisplayName: !Sub "container-instance-state-change-${AWS::StackName}"
-      TopicName: !Sub "container-instance-state-change-${AWS::StackName}"
 
   CloudWatchEventsTaskStateChangeTopicPolicy:
     Type: "AWS::SNS::TopicPolicy"
