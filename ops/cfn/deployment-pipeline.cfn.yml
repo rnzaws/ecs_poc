@@ -53,6 +53,10 @@ Parameters:
     MaxLength: 100
     Description: "ECS cluster stack name"
 
+  LogRetentionInDays:
+    Type: Number
+    Default: 7
+
   VpcStackName:
     Type: String
     MinLength: 1
@@ -299,6 +303,12 @@ Resources:
       Name: !Ref AWS::StackName
       ServiceRole: !Ref CodeBuildServiceRole
 
+  ContainerLogGroup:
+    Type: "AWS::Logs::LogGroup"
+    Properties:
+      LogGroupName: !Sub "/ecs/container/${ServiceStackName}"
+      RetentionInDays: !Ref LogRetentionInDays
+
   Pipeline:
     Type: "AWS::CodePipeline::Pipeline"
     Properties:
@@ -364,7 +374,8 @@ Resources:
                       "LoadBalancerListenerArn": "${LoadBalancerListenerArn}",
                       "VpcId": "${VpcId}",
                       "TargetGroupArn": "${TargetGroupArn}",
-                      "DeploymentPipelineStackName": "${AWS::StackName}"
+                      "DeploymentPipelineStackName": "${AWS::StackName}",
+                      "LogGroup": "${ContainerLogGroup}"
                     }
                   - EcsClusterName:
                       "Fn::ImportValue": !Sub "${EcsClusterStackName}-ecs-cluster-name"
@@ -372,14 +383,22 @@ Resources:
                       "Fn::ImportValue": !Sub "${CiRepositoryStackName}-repository-name"
                     LoadBalancerListenerArn:
                       "Fn::ImportValue": !Sub "${AlbStackName}-alb-listener-arn"
-                    TargetGroupArn:
-                      "Fn::ImportValue": !Sub "${AlbStackName}-not-found-target-group-arn"
                     VpcId:
                       "Fn::ImportValue": !Sub "${VpcStackName}-vpc-id"
+                    TargetGroupArn:
+                      "Fn::ImportValue": !Sub "${AlbStackName}-not-found-target-group-arn"
+                    ContainerLogGroup:
+                      !Ref ContainerLogGroup
               InputArtifacts:
                 - Name: App
                 - Name: BuildOutput
               RunOrder: 1
+    DependsOn:
+      - ArtifactBucket
+      - CodeBuildProject
+      - CloudFormationExecutionRole
+      - CodePipelineServiceRole
+      - ContainerLogGroup
 
 Outputs:
 
@@ -407,4 +426,14 @@ Outputs:
     Value: !GetAtt EcsContainerDiedEventTopic.TopicName
     Export:
       Name: !Sub "${AWS::StackName}-ecs-container-died-topic-name"
+
+  ContainerLogGroupName:
+    Value: !Ref ContainerLogGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-container-log-group"
+
+  ContainerLogGroupArn:
+    Value: !GetAtt ContainerLogGroup.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-container-log-group-arn"
 
