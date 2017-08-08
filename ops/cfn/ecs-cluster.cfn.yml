@@ -62,7 +62,7 @@ Parameters:
     MinLength: 1
     MaxLength: 30
     AllowedPattern: "^[a-zA-Z][-a-zA-Z0-9]*$"
-    Default: "ami-6df8fe7a"
+    Default: "ami-04351e12"
     Description: " AMI Id - default is us-east-1"
 
 Resources:
@@ -125,7 +125,7 @@ Resources:
       ClusterName: !Sub "ecs-cluster-${AWS::StackName}"
 
   AutoScalingGroup:
-    Type: AWS::AutoScaling::AutoScalingGroup
+    Type: "AWS::AutoScaling::AutoScalingGroup"
     Properties:
       VPCZoneIdentifier:
         - Fn::ImportValue: !Sub "${VpcStackName}-private-subnet-1-id"
@@ -153,9 +153,18 @@ Resources:
     Metadata:
       AWS::CloudFormation::Init:
         config:
+          packages:
+            yum:
+              awslogs: []
+              jq: []
+
           commands:
             01_add_instance_to_cluster:
-                command: !Sub "echo ECS_CLUSTER=${Cluster} > /etc/ecs/ecs.config"
+              command: !Sub "echo ECS_CLUSTER=${Cluster} > /etc/ecs/ecs.config"
+
+            02_add_awslogs_to_cluster:
+              command: !Sub "echo ECS_AVAILABLE_LOGGING_DRIVERS='[\"json-file\",\"awslogs\"]' >> /etc/ecs/ecs.config"
+
           files:
             "/etc/awslogs/awslogs.conf":
               mode: 000400
@@ -237,7 +246,7 @@ Resources:
       UserData:
         "Fn::Base64": !Sub |
           #!/bin/bash
-          yum install -y aws-cfn-bootstrap awslogs jq
+          yum install -y aws-cfn-bootstrap
           /opt/aws/bin/cfn-init -v --region ${AWS::Region} --stack ${AWS::StackName} --resource LaunchConfiguration
           /opt/aws/bin/cfn-signal -e $? --region ${AWS::Region} --stack ${AWS::StackName} --resource AutoScalingGroup
 
@@ -250,6 +259,11 @@ Resources:
     Type: "AWS::SNS::Topic"
     Properties:
       DisplayName: !Sub "container-instance-state-change-${AWS::StackName}"
+
+  ContainerInstanceInactiveTopic:
+    Type: "AWS::SNS::Topic"
+    Properties:
+      DisplayName: !Sub "container-instance-inactive-${AWS::StackName}"
 
   CloudWatchEventsTaskStateChangeTopicPolicy:
     Type: "AWS::SNS::TopicPolicy"
@@ -269,7 +283,7 @@ Resources:
     DependsOn:
       - TaskStateChangeTopic
 
-  CloudWatchEventsContrainerStateChangeTopicPolicy:
+  CloudWatchEventsContainerInstanceStateChangeTopicPolicy:
     Type: "AWS::SNS::TopicPolicy"
     Properties:
       PolicyDocument:
@@ -285,7 +299,26 @@ Resources:
       Topics:
         - !Ref ContainerInstanceStateChangeTopic
     DependsOn:
-    - ContainerInstanceStateChangeTopic
+      - ContainerInstanceStateChangeTopic
+
+  CloudWatchEventsContainerInstanceInactiveTopicPolicy:
+    Type: "AWS::SNS::TopicPolicy"
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Action: "sns:Publish"
+            Principal:
+              Service:
+                - "events.amazonaws.com"
+            Resource:
+              - !Ref ContainerInstanceInactiveTopic
+      Topics:
+        - !Ref ContainerInstanceInactiveTopic
+    DependsOn:
+      - ContainerInstanceInactiveTopic
+
 
   TaskStateChangeEventRule:
     Type: "AWS::Events::Rule"
@@ -327,6 +360,28 @@ Resources:
       - Cluster
       - ContainerInstanceStateChangeTopic
 
+  ContainerInstanceInactiveEventRule:
+    Type: "AWS::Events::Rule"
+    Properties:
+      Description: !Sub "ContainerInstanceInactiveEventRule-${AWS::StackName}"
+      EventPattern:
+        source:
+          - "aws.ecs"
+        detail-type:
+          - "ECS Container Instance State Change"
+        detail:
+          clusterArn:
+            - !Sub "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:cluster/${Cluster}"
+          status:
+            - "INACTIVE"
+      State: "ENABLED"
+      Targets:
+        - Arn: !Ref ContainerInstanceInactiveTopic
+          Id: !Sub "container-instance-inactive-target-${AWS::StackName}"
+    DependsOn:
+      - Cluster
+      - ContainerInstanceInactiveTopic
+
 Outputs:
 
   ClusterName:
@@ -359,4 +414,13 @@ Outputs:
     Export:
       Name: !Sub "${AWS::StackName}-container-instance-state-change-topic-name"
 
+  ContainerInstanceInactiveTopicArn:
+    Value: !Ref ContainerInstanceInactiveTopic
+    Export:
+      Name: !Sub "${AWS::StackName}-container-instance-inactive-topic-arn"
+
+  ContainerInstanceInactiveTopicName:
+    Value: !GetAtt ContainerInstanceInactiveTopic.TopicName
+    Export:
+      Name: !Sub "${AWS::StackName}-container-instance-inactive-topic-name"
 
