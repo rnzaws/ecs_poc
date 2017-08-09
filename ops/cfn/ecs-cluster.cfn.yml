@@ -203,7 +203,13 @@ Resources:
               command: !Sub "echo ECS_CLUSTER=${Cluster} > /etc/ecs/ecs.config"
 
             02_add_awslogs_to_cluster:
-              command: !Sub "echo ECS_AVAILABLE_LOGGING_DRIVERS='[\"json-file\",\"awslogs\"]' >> /etc/ecs/ecs.config"
+              command: "echo ECS_AVAILABLE_LOGGING_DRIVERS='[\"json-file\",\"awslogs\"]' >> /etc/ecs/ecs.config"
+
+            03_enable_task_iam_role:
+              command: "echo ECS_ENABLE_TASK_IAM_ROLE=true >> /etc/ecs/ecs.config"
+
+            04_enable_task_iam_role_network:
+              command: "echo ECS_ENABLE_TASK_IAM_ROLE_NETWORK_HOST=true >> /etc/ecs/ecs.config"
 
           files:
             "/etc/awslogs/awslogs.conf":
