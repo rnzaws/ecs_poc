@@ -30,7 +30,6 @@ Resources:
   KinesisStream404:
     Type: "AWS::Kinesis::Stream"
     Properties:
-      Name: !Sub "stream-404-${AWS::StackName}"
       ShardCount: !Ref KinesisStreamShardCount404
 
 Outputs:
