@@ -182,7 +182,6 @@ Resources:
       - EcsCloudFormationDeployErrorEventTopic
       - CodePipelineServiceRole
 
-  # TODO The policies are a little too open here.
   CloudFormationExecutionRole:
     Type: "AWS::IAM::Role"
     DeletionPolicy: Delete
@@ -197,18 +196,70 @@ Resources:
             }]
         }
       Policies:
-        - PolicyName: root
+        - PolicyName: ecs-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource:
+                  Fn::ImportValue: !Sub "${EcsClusterStackName}-ecs-cluster-arn"
+                Effect: Allow
+                Action:
+                  - "ecs:CreateService"
+                  - "ecs:DeleteService"
+                  - "ecs:DeregisterTaskDefinition"
+                  - "ecs:Describe*"
+                  - "ecs:Discover*"
+                  - "ecs:List*"
+                  - "ecs:RegisterTaskDefinition"
+                  - "ecs:RunTask"
+                  - "ecs:StartTask"
+                  - "ecs:StopTask"
+                  - "ecs:SubmitContainerStateChange"
+                  - "ecs:SubmitTaskStateChange"
+                  - "ecs:UpdateService"
+                  - "ecs:Poll"
+        - PolicyName: ecr-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource:
+                  Fn::ImportValue: !Sub "${CiRepositoryStackName}-repository-arn"
+                Effect: Allow
+                Action:
+                  - "ecr:BatchCheckLayerAvailability"
+                  - "ecr:BatchGetImage"
+                  - "ecr:Describe*"
+                  - "ecr:Get*"
+                  - "ecr:List*"
+        - PolicyName: alb-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource:
+                  Fn::ImportValue: !Sub "${AlbStackName}-load-balancer-arn"
+                Effect: Allow
+                Action:
+                  - "elasticloadbalancing:ConfigureHealthCheck"
+                  - "elasticloadbalancing:CreateAppCookieStickinessPolicy"
+                  - "elasticloadbalancing:CreateLBCookieStickinessPolicy"
+                  - "elasticloadbalancing:CreateRule"
+                  - "elasticloadbalancing:CreateTargetGroup"
+                  - "elasticloadbalancing:DeleteRule"
+                  - "elasticloadbalancing:DeleteTargetGroup"
+                  - "elasticloadbalancing:DeregisterTargets"
+                  - "elasticloadbalancing:Describe*"
+                  - "elasticloadbalancing:ModifyRule"
+                  - "elasticloadbalancing:ModifyTargetGroup"
+                  - "elasticloadbalancing:ModifyTargetGroupAttributes"
+                  - "elasticloadbalancing:RegisterTargets"
+        - PolicyName: events-policy
           PolicyDocument:
             Version: 2012-10-17
             Statement:
               - Resource: "*"
                 Effect: Allow
                 Action:
-                  - "ecs:*"
-                  - "ecr:*"
-                  - "iam:*"
                   - "events:*"
-                  - "elasticloadbalancing:*"
 
   CodeBuildServiceRole:
     Type: "AWS::IAM::Role"
@@ -234,16 +285,14 @@ Resources:
                   - "logs:CreateLogStream"
                   - "logs:PutLogEvents"
                   - "ecr:GetAuthorizationToken"
-              - Resource: !Sub arn:aws:s3:::${ArtifactBucket}/*
+              - Resource: !Sub "arn:aws:s3:::${ArtifactBucket}/*"
                 Effect: Allow
                 Action:
                   - "s3:GetObject"
                   - "s3:PutObject"
                   - "s3:GetObjectVersion"
-              - Resource: !Sub
-                  - "arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/${RepositoryName}"
-                  - RepositoryName:
-                      "Fn::ImportValue": !Sub "${CiRepositoryStackName}-repository-name"
+              - Resource:
+                  Fn::ImportValue: !Sub "${CiRepositoryStackName}-repository-arn"
                 Effect: Allow
                 Action:
                   - "ecr:GetDownloadUrlForLayer"
@@ -308,10 +357,8 @@ Resources:
           - Name: AWS_DEFAULT_REGION
             Value: !Ref AWS::Region
           - Name: REPOSITORY_URI
-            Value: !Sub
-              - "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${RepositoryName}"
-              - RepositoryName:
-                    "Fn::ImportValue": !Sub "${CiRepositoryStackName}-repository-name"
+            Value:
+              Fn::ImportValue: !Sub "${CiRepositoryStackName}-repository-uri"
       Name: !Ref AWS::StackName
       ServiceRole: !Ref CodeBuildServiceRole
 
