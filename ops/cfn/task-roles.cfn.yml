@@ -26,6 +26,20 @@ Parameters:
     MaxLength: 255
     Description: "Task kinesis stack name"
 
+  Repo404Name:
+    Type: String
+    MinLength: 1
+    MaxLength: 255
+    Description: "Repo name for 404"
+    Default: "404"
+
+  RepoPhpHelloName:
+    Type: String
+    MinLength: 1
+    MaxLength: 255
+    Description: "Repo name for php-hello"
+    Default: "php-hello"
+
 Resources:
 
   #
@@ -46,7 +60,7 @@ Resources:
             }]
         }
       Policies:
-        - PolicyName: "cloudwatch-logs-create-log-group"
+        - PolicyName: "kinesis-put-records"
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -55,14 +69,12 @@ Resources:
                   - "kinesis:PutRecord"
                   - "kinesis:PutRecords"
                 Resource:
-                  - Fn::ImportValue: !Sub "${TaskKinesisStackName}-kinesis-stream-404-arn"
+                  - Fn::ImportValue: !Sub "${TaskKinesisStackName}-kinesis-stream-${Repo404Name}-arn"
 
 Outputs:
 
   EcsTaskRole404Arn:
     Value: !GetAtt EcsTaskRole404.Arn
     Export:
-      Name: !Sub "${AWS::StackName}-task-role-404-arn"
-
-
+      Name: !Sub "${AWS::StackName}-task-role-${Repo404Name}-arn"
 
