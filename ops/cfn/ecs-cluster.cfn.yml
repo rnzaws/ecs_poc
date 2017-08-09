@@ -365,7 +365,6 @@ Resources:
     DependsOn:
       - ContainerInstanceInactiveTopic
 
-
   TaskStateChangeEventRule:
     Type: "AWS::Events::Rule"
     Properties:
