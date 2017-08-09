@@ -47,6 +47,22 @@ Resources:
   # define their own roles.
   #
 
+
+  EcsServiceRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument: |
+        {
+          "Statement": [{
+            "Effect": "Allow",
+            "Principal": { "Service": [ "ecs.amazonaws.com" ]},
+            "Action": [ "sts:AssumeRole" ]
+          }]
+        }
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole
+
   EcsTask404Role:
     Type: "AWS::IAM::Role"
     Properties:
@@ -85,6 +101,16 @@ Resources:
         }
 
 Outputs:
+
+  EcsServiceRole:
+    Value: !Ref EcsServiceRole
+    Export:
+      Name: !Sub "${AWS::StackName}-ecs-service-role"
+
+  EcsServiceRoleArn:
+    Value: !GetAtt EcsServiceRole.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-ecs-service-role-arn"
 
   EcsTask404RoleArn:
     Value: !GetAtt EcsTask404Role.Arn
