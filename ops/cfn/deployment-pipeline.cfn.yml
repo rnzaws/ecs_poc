@@ -22,7 +22,7 @@ Parameters:
 
   GitHubSourceRepo:
     Type: String
-    Default: "ecs-demo-php-simple-app"
+    Default: "404"
 
   GitHubBranch:
     Type: String
@@ -52,6 +52,12 @@ Parameters:
     MinLength: 1
     MaxLength: 100
     Description: "ECS cluster stack name"
+
+  TaskRoleStackName:
+    Type: String
+    MinLength: 1
+    MaxLength: 100
+    Description: "ECS task role stack name"
 
   LogRetentionInDays:
     Type: Number
@@ -375,7 +381,8 @@ Resources:
                       "VpcId": "${VpcId}",
                       "TargetGroupArn": "${TargetGroupArn}",
                       "DeploymentPipelineStackName": "${AWS::StackName}",
-                      "LogGroup": "${ContainerLogGroup}"
+                      "LogGroup": "${ContainerLogGroup}",
+                      "TaskRoleArn": "${TaskRoleArn}"
                     }
                   - EcsClusterName:
                       "Fn::ImportValue": !Sub "${EcsClusterStackName}-ecs-cluster-name"
@@ -389,6 +396,8 @@ Resources:
                       "Fn::ImportValue": !Sub "${AlbStackName}-not-found-target-group-arn"
                     ContainerLogGroup:
                       !Ref ContainerLogGroup
+                    TaskRoleArn:
+                      "Fn::ImportValue": !Sub "${TaskRoleStackName}-task-role-${GitHubSourceRepo}-arn"
               InputArtifacts:
                 - Name: App
                 - Name: BuildOutput
