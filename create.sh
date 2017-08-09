@@ -51,6 +51,8 @@ aws cloudformation create-stack --stack-name app-ecs-${APP_ENV} --template-body 
     ParameterKey=AlbStackName,ParameterValue=app-alb-${APP_ENV} \
     ParameterKey=BastionStackName,ParameterValue=system-bastion-${APP_ENV}
 
+aws cloudformation wait stack-create-complete --stack-name app-ecs-${APP_ENV}
+
 aws cloudformation create-stack --stack-name system-kinesis-${APP_ENV} --template-body file://ops/cfn/system-kinesis.cfn.yml --capabilities CAPABILITY_NAMED_IAM
 
 aws cloudformation wait stack-create-complete --stack-name system-kinesis-${APP_ENV}
