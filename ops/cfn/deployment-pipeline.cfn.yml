@@ -206,11 +206,7 @@ Resources:
                 Action:
                   - "ecs:CreateService"
                   - "ecs:DeleteService"
-                  - "ecs:DeregisterTaskDefinition"
-                  - "ecs:Describe*"
                   - "ecs:Discover*"
-                  - "ecs:List*"
-                  - "ecs:RegisterTaskDefinition"
                   - "ecs:RunTask"
                   - "ecs:StartTask"
                   - "ecs:StopTask"
@@ -218,6 +214,19 @@ Resources:
                   - "ecs:SubmitTaskStateChange"
                   - "ecs:UpdateService"
                   - "ecs:Poll"
+
+        - PolicyName: ecs-policy-all
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - "ecs:DeregisterTaskDefinition"
+                  - "ecs:RegisterTaskDefinition"
+                  - "ecs:Describe*"
+                  - "ecs:List*"
+
         - PolicyName: ecr-policy
           PolicyDocument:
             Version: 2012-10-17
@@ -436,7 +445,8 @@ Resources:
                       "DeploymentPipelineStackName": "${AWS::StackName}",
                       "LogGroup": "${ContainerLogGroup}",
                       "TaskRoleArn": "${TaskRoleArn}",
-                      "SystemKinesisStackName": "${SystemKinesisStackName}"
+                      "SystemKinesisStackName": "${SystemKinesisStackName}",
+                      "TaskRoleStackName": "${TaskRoleStackName}"
                     }
                   - EcsClusterName:
                       "Fn::ImportValue": !Sub "${EcsClusterStackName}-ecs-cluster-name"
