@@ -47,7 +47,7 @@ Resources:
   # define their own roles.
   #
 
-  EcsTaskRole404:
+  EcsTask404Role:
     Type: "AWS::IAM::Role"
     Properties:
       Path: /
@@ -71,10 +71,29 @@ Resources:
                 Resource:
                   - Fn::ImportValue: !Sub "${TaskKinesisStackName}-kinesis-stream-${Repo404Name}-arn"
 
+  EcsTaskPhpHelloRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument: |
+        {
+            "Statement": [{
+                "Effect": "Allow",
+                "Principal": { "Service": [ "ecs-tasks.amazonaws.com" ] },
+                "Action": [ "sts:AssumeRole" ]
+            }]
+        }
+
 Outputs:
 
-  EcsTaskRole404Arn:
-    Value: !GetAtt EcsTaskRole404.Arn
+  EcsTask404RoleArn:
+    Value: !GetAtt EcsTask404Role.Arn
     Export:
       Name: !Sub "${AWS::StackName}-task-role-${Repo404Name}-arn"
+
+
+  EcsTaskPhpHelloRoleArn:
+    Value: !GetAtt EcsTaskPhpHelloRole.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-task-role-${RepoPhpHelloName}-arn"
 
