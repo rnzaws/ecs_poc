@@ -26,7 +26,7 @@ Resources:
 
   CloudTrailBucket:
     Type: "AWS::S3::Bucket"
-    DeletionPolicy: Retain
+    DeletionPolicy: "Retain"
 
   CloudTrailBucketPolicy:
     Type: "AWS::S3::BucketPolicy"
@@ -123,5 +123,4 @@ Outputs:
     Value: !Ref CloudTrail
     Export:
       Name: !Sub "${AWS::StackName}-cloud-trail"
-
 
