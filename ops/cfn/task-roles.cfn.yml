@@ -20,11 +20,11 @@ AWSTemplateFormatVersion: '2010-09-09'
 
 Parameters:
 
-  TaskKinesisStackName:
+  SystemKinesisStackName:
     Type: String
     MinLength: 1
     MaxLength: 255
-    Description: "Task kinesis stack name"
+    Description: "System kinesis stack name"
 
   Repo404Name:
     Type: String
@@ -69,7 +69,7 @@ Resources:
                   - "kinesis:PutRecord"
                   - "kinesis:PutRecords"
                 Resource:
-                  - Fn::ImportValue: !Sub "${TaskKinesisStackName}-kinesis-stream-${Repo404Name}-arn"
+                  - Fn::ImportValue: !Sub "${SystemKinesisStackName}-kinesis-stream-${Repo404Name}-arn"
 
   EcsTaskPhpHelloRole:
     Type: "AWS::IAM::Role"
@@ -90,7 +90,6 @@ Outputs:
     Value: !GetAtt EcsTask404Role.Arn
     Export:
       Name: !Sub "${AWS::StackName}-task-role-${Repo404Name}-arn"
-
 
   EcsTaskPhpHelloRoleArn:
     Value: !GetAtt EcsTaskPhpHelloRole.Arn
