@@ -31,21 +31,6 @@ handle building and deploying to the ECS cluster.
 As with all demo/open source code, please review and test extensively to verify
 that all of your use cases/requirements are covered.
 
----
-
-## Network
-
-The VPC setup and bastion server CloudFormation templates are based on the
-[AWS Startup Kit Templates](https://github.com/awslabs/startup-kit-templates). Please [review the README](https://github.com/awslabs/startup-kit-templates/blob/master/README.md)
-for a more detailed explanation of the network and bastion server. In this example, the bastion server
-security group is not IP restricted (allows 0.0.0.0/0), but you can pass in a SshFrom parameter to the
-basion.cfm.yml stack to restrict access to specific IP addresses. We highly recommend isolating access to your
-bastion server.
-
----
-
-## ECS Cluster
-
 The core of the ECS cluster stack and the CodePipeline deployment components was based on the following
 [Amazon Web Services - Labs](https://github.com/awslabs/) projects:
 
@@ -62,5 +47,20 @@ but we were looking for additional best practices and examples. The main extensi
 
 Instead of having multiple reference architectures, we will probably be issuing some pull requests, once everything in this
 project is flushed out.
+
+---
+
+## Network
+
+The VPC setup and bastion server CloudFormation templates are based on the
+[AWS Startup Kit Templates](https://github.com/awslabs/startup-kit-templates). Please [review the README](https://github.com/awslabs/startup-kit-templates/blob/master/README.md)
+for a more detailed explanation of the network and bastion server. In this example, the bastion server
+security group is not IP restricted (allows 0.0.0.0/0), but you can pass in a SshFrom parameter to the
+basion.cfm.yml stack to restrict access to specific IP addresses. We highly recommend isolating access to your
+bastion server.
+
+---
+
+
 
 
