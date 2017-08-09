@@ -50,14 +50,20 @@ Parameters:
   EcsClusterStackName:
     Type: String
     MinLength: 1
-    MaxLength: 100
+    MaxLength: 255
     Description: "ECS cluster stack name"
 
   TaskRoleStackName:
     Type: String
     MinLength: 1
-    MaxLength: 100
+    MaxLength: 255
     Description: "ECS task role stack name"
+
+  TaskKinesisStackName:
+    Type: String
+    MinLength: 1
+    MaxLength: 255
+    Description: "Task kinesis stack name"
 
   LogRetentionInDays:
     Type: Number
@@ -382,7 +388,8 @@ Resources:
                       "TargetGroupArn": "${TargetGroupArn}",
                       "DeploymentPipelineStackName": "${AWS::StackName}",
                       "LogGroup": "${ContainerLogGroup}",
-                      "TaskRoleArn": "${TaskRoleArn}"
+                      "TaskRoleArn": "${TaskRoleArn}",
+                      "TaskKinesisStackName": "${TaskKinesisStackName}"
                     }
                   - EcsClusterName:
                       "Fn::ImportValue": !Sub "${EcsClusterStackName}-ecs-cluster-name"
