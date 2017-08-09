@@ -28,8 +28,22 @@ Resources:
 
 Outputs:
 
+  RepositoryArn:
+    Value: !Sub "arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/${Repository}"
+    Export:
+      Name: !Sub "${AWS::StackName}-repository-arn"
+
+  RepositoryUri:
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}"
+    Export:
+      Name: !Sub "${AWS::StackName}-repository-uri"
+
   RepositoryName:
     Value: !Ref Repository
     Export:
       Name: !Sub "${AWS::StackName}-repository-name"
+
+
+
+
 
