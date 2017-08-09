@@ -21,41 +21,49 @@ APP_ENV="$1"
 
 GITHUB_TOKEN="$2"
 
-aws cloudformation create-stack --stack-name system-bootstrap-$APP_ENV --template-body file://ops/cfn/bootstrap.cfn.yml
+aws cloudformation create-stack --stack-name system-bootstrap-${APP_ENV} --template-body file://ops/cfn/bootstrap.cfn.yml
 
-aws cloudformation wait stack-create-complete --stack-name system-bootstrap-$APP_ENV
+aws cloudformation wait stack-create-complete --stack-name system-bootstrap-${APP_ENV}
 
-BOOTSTRAP_BUCKET=$(aws cloudformation describe-stacks --stack-name system-bootstrap-$APP_ENV --query 'Stacks[0].Outputs[0].OutputValue' | tr -d '"')
+BOOTSTRAP_BUCKET=$(aws cloudformation describe-stacks --stack-name system-bootstrap-${APP_ENV} --query 'Stacks[0].Outputs[0].OutputValue' | tr -d '"')
 
-aws cloudformation create-stack --stack-name system-vpc-$APP_ENV --template-body file://ops/cfn/vpc.cfn.yml
+aws cloudformation create-stack --stack-name system-vpc-${APP_ENV} --template-body file://ops/cfn/vpc.cfn.yml
 
-aws cloudformation wait stack-create-complete --stack-name system-vpc-$APP_ENV
+aws cloudformation wait stack-create-complete --stack-name system-vpc-${APP_ENV}
 
-aws cloudformation create-stack --stack-name system-ci-repository-$APP_ENV --template-body file://ops/cfn/ci-repository.cfn.yml
+aws cloudformation create-stack --stack-name system-ci-repository-${APP_ENV} --template-body file://ops/cfn/ci-repository.cfn.yml
 
-aws cloudformation wait stack-create-complete --stack-name system-ci-repository-$APP_ENV
+aws cloudformation wait stack-create-complete --stack-name system-ci-repository-${APP_ENV}
 
-aws cloudformation create-stack --stack-name system-bastion-$APP_ENV --template-body file://ops/cfn/bastion.cfn.yml \
-  --parameters ParameterKey=VpcStackName,ParameterValue=system-vpc-$APP_ENV
+aws cloudformation create-stack --stack-name system-bastion-${APP_ENV} --template-body file://ops/cfn/bastion.cfn.yml \
+  --parameters ParameterKey=VpcStackName,ParameterValue=system-vpc-${APP_ENV}
 
-aws cloudformation wait stack-create-complete --stack-name system-bastion-$APP_ENV
+aws cloudformation wait stack-create-complete --stack-name system-bastion-${APP_ENV}
 
-aws cloudformation create-stack --stack-name app-alb-$APP_ENV --template-body file://ops/cfn/load-balancer.cfn.yml \
-  --parameters ParameterKey=VpcStackName,ParameterValue=system-vpc-$APP_ENV
+aws cloudformation create-stack --stack-name app-alb-${APP_ENV} --template-body file://ops/cfn/load-balancer.cfn.yml \
+  --parameters ParameterKey=VpcStackName,ParameterValue=system-vpc-${APP_ENV}
 
-aws cloudformation wait stack-create-complete --stack-name app-alb-$APP_ENV
+aws cloudformation wait stack-create-complete --stack-name app-alb-${APP_ENV}
 
-aws cloudformation create-stack --stack-name app-ecs-$APP_ENV --template-body file://ops/cfn/ecs-cluster.cfn.yml --capabilities CAPABILITY_NAMED_IAM \
+aws cloudformation create-stack --stack-name app-ecs-${APP_ENV} --template-body file://ops/cfn/ecs-cluster.cfn.yml --capabilities CAPABILITY_NAMED_IAM \
   --parameters \
-    ParameterKey=VpcStackName,ParameterValue=system-vpc-$APP_ENV \
-    ParameterKey=AlbStackName,ParameterValue=app-alb-$APP_ENV \
-    ParameterKey=BastionStackName,ParameterValue=system-bastion-$APP_ENV
+    ParameterKey=VpcStackName,ParameterValue=system-vpc-${APP_ENV} \
+    ParameterKey=AlbStackName,ParameterValue=app-alb-${APP_ENV} \
+    ParameterKey=BastionStackName,ParameterValue=system-bastion-${APP_ENV}
 
-aws cloudformation wait stack-create-complete --stack-name app-ecs-$APP_ENV
+aws cloudformation create-stack --stack-name task-kinesis-${APP_ENV} --template-body file://ops/cfn/task-kinesis.cfn.yml --capabilities CAPABILITY_NAMED_IAM
+
+aws cloudformation wait stack-create-complete --stack-name task-kinesis-${APP_ENV}
+
+aws cloudformation create-stack --stack-name task-roles-${APP_ENV} --template-body file://ops/cfn/task-roles.cfn.yml --capabilities CAPABILITY_NAMED_IAM \
+  --parameters \
+    ParameterKey=TaskKinesisStackName,ParameterValue=task-kinesis-${APP_ENV}
+
+aws cloudformation wait stack-create-complete --stack-name app-ecs-${APP_ENV}
 
 #
 # Long repo names cause problems with declarative attribute names (max string lengths for some attributes in CFN templates).
-# Keep your repo names someowhat short.
+# Keep your repo names somewhat short.
 #
 service_github_repos=(404 php-hello)
 
@@ -64,19 +72,19 @@ service_github_repos=(404 php-hello)
 #
 for service_github_repo in ${service_github_repos[*]}
 do
-  aws cloudformation create-stack --stack-name ecs-$service_github_repo-ci-$APP_ENV --template-body file://ops/cfn/deployment-pipeline.cfn.yml --capabilities CAPABILITY_NAMED_IAM \
+  aws cloudformation create-stack --stack-name ecs-$service_github_repo-ci-${APP_ENV} --template-body file://ops/cfn/deployment-pipeline.cfn.yml --capabilities CAPABILITY_NAMED_IAM \
     --parameters \
-      ParameterKey=EcsClusterStackName,ParameterValue=app-ecs-$APP_ENV \
-      ParameterKey=AlbStackName,ParameterValue=app-alb-$APP_ENV \
-      ParameterKey=VpcStackName,ParameterValue=system-vpc-$APP_ENV \
+      ParameterKey=EcsClusterStackName,ParameterValue=app-ecs-${APP_ENV} \
+      ParameterKey=AlbStackName,ParameterValue=app-alb-${APP_ENV} \
+      ParameterKey=VpcStackName,ParameterValue=system-vpc-${APP_ENV} \
       ParameterKey=GitHubSourceRepo,ParameterValue=$service_github_repo \
-      ParameterKey=ServiceStackName,ParameterValue=ecs-$service_github_repo-service-$APP_ENV \
-      ParameterKey=CiRepositoryStackName,ParameterValue=system-ci-repository-$APP_ENV \
+      ParameterKey=ServiceStackName,ParameterValue=ecs-$service_github_repo-service-${APP_ENV} \
+      ParameterKey=TaskRoleStackName,ParameterValue=task-roles-${APP_ENV} \
+      ParameterKey=CiRepositoryStackName,ParameterValue=system-ci-repository-${APP_ENV} \
       ParameterKey=GitHubToken,ParameterValue=$GITHUB_TOKEN \
-      ParameterKey=TaskName,ParameterValue=ecs-$service_github_repo-ci-$APP_ENV \
+      ParameterKey=TaskName,ParameterValue=ecs-$service_github_repo-ci-${APP_ENV} \
       ParameterKey=DesiredCount,ParameterValue=2
-  aws cloudformation wait stack-create-complete --stack-name ecs-$service_github_repo-ci-$APP_ENV &
+  aws cloudformation wait stack-create-complete --stack-name ecs-$service_github_repo-ci-${APP_ENV} &
 done
 
 wait
-
