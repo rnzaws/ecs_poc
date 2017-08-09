@@ -22,7 +22,7 @@ Resources:
 
   Repository:
     Type: "AWS::ECR::Repository"
-    DeletionPolicy: "Delete"
+    DeletionPolicy: "Retain"
     Properties:
       RepositoryName: !Sub "containers-${AWS::StackName}"
 
