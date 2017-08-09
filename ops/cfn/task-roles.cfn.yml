@@ -47,7 +47,6 @@ Resources:
   # define their own roles.
   #
 
-
   EcsServiceRole:
     Type: "AWS::IAM::Role"
     Properties:
