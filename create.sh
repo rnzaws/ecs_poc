@@ -51,15 +51,15 @@ aws cloudformation create-stack --stack-name app-ecs-${APP_ENV} --template-body 
     ParameterKey=AlbStackName,ParameterValue=app-alb-${APP_ENV} \
     ParameterKey=BastionStackName,ParameterValue=system-bastion-${APP_ENV}
 
-aws cloudformation create-stack --stack-name task-kinesis-${APP_ENV} --template-body file://ops/cfn/task-kinesis.cfn.yml --capabilities CAPABILITY_NAMED_IAM
+aws cloudformation create-stack --stack-name system-kinesis-${APP_ENV} --template-body file://ops/cfn/system-kinesis.cfn.yml --capabilities CAPABILITY_NAMED_IAM
 
-aws cloudformation wait stack-create-complete --stack-name task-kinesis-${APP_ENV}
+aws cloudformation wait stack-create-complete --stack-name system-kinesis-${APP_ENV}
 
 aws cloudformation create-stack --stack-name task-roles-${APP_ENV} --template-body file://ops/cfn/task-roles.cfn.yml --capabilities CAPABILITY_NAMED_IAM \
   --parameters \
-    ParameterKey=TaskKinesisStackName,ParameterValue=task-kinesis-${APP_ENV}
+    ParameterKey=SystemKinesisStackName,ParameterValue=system-kinesis-${APP_ENV}
 
-aws cloudformation wait stack-create-complete --stack-name app-ecs-${APP_ENV}
+aws cloudformation wait stack-create-complete --stack-name task-roles-${APP_ENV}
 
 #
 # Long repo names cause problems with declarative attribute names (max string lengths for some attributes in CFN templates).
@@ -80,6 +80,7 @@ do
       ParameterKey=GitHubSourceRepo,ParameterValue=$service_github_repo \
       ParameterKey=ServiceStackName,ParameterValue=ecs-$service_github_repo-service-${APP_ENV} \
       ParameterKey=TaskRoleStackName,ParameterValue=task-roles-${APP_ENV} \
+      ParameterKey=SystemKinesisStackName,ParameterValue=system-kinesis-${APP_ENV} \
       ParameterKey=CiRepositoryStackName,ParameterValue=system-ci-repository-${APP_ENV} \
       ParameterKey=GitHubToken,ParameterValue=$GITHUB_TOKEN \
       ParameterKey=TaskName,ParameterValue=ecs-$service_github_repo-ci-${APP_ENV} \
