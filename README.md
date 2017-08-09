@@ -52,6 +52,19 @@ The core of the ECS cluster stack and the CodePipeline deployment components was
 * [ecs-refarch-cloudformation](https://github.com/awslabs/ecs-refarch-cloudformation)
 * [ecs-refarch-continuous-deployment](https://github.com/awslabs/ecs-refarch-continuous-deployment)
 
+Both of these projects are excellent starting points for ECS (hence why we based our work on these projects),
+but we were looking for additional best practices and examples. The main extension points in this POC are:
+
+* Event notifications via [Amazon Simple Notification Service (SNS)](https://aws.amazon.com/sns/)
+* ECS cluster host logging to [Amazon CloudWatch Logs](http://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/WhatIsCloudWatchLogs.html)
+* ECS task logging to Amazon CloudWatch Logs
+* Some control for service developers of their configuration/deployment
+* Task specific [IAM Roles](http://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html) for containers
+
+
+
+
+
 
 
 
