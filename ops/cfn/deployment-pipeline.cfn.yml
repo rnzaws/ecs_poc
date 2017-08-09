@@ -204,17 +204,13 @@ Resources:
                   Fn::ImportValue: !Sub "${EcsClusterStackName}-ecs-cluster-arn"
                 Effect: Allow
                 Action:
-                  - "ecs:CreateService"
-                  - "ecs:DeleteService"
-                  - "ecs:Discover*"
                   - "ecs:RunTask"
                   - "ecs:StartTask"
+                  - "ecs:StartTelemetrySession"
                   - "ecs:StopTask"
                   - "ecs:SubmitContainerStateChange"
                   - "ecs:SubmitTaskStateChange"
-                  - "ecs:UpdateService"
                   - "ecs:Poll"
-
         - PolicyName: ecs-policy-all
           PolicyDocument:
             Version: 2012-10-17
@@ -222,11 +218,23 @@ Resources:
               - Resource: "*"
                 Effect: Allow
                 Action:
+                  - "ecs:Discover*"
+                  - "ecs:CreateService"
+                  - "ecs:DeleteService"
+                  - "ecs:UpdateService"
                   - "ecs:DeregisterTaskDefinition"
                   - "ecs:RegisterTaskDefinition"
                   - "ecs:Describe*"
                   - "ecs:List*"
-
+        - PolicyName: iam-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource:
+                  Fn::ImportValue: !Sub "${TaskRoleStackName}-task-role-${GitHubSourceRepo}-arn"
+                Effect: Allow
+                Action:
+                  - "iam:PassRole"
         - PolicyName: ecr-policy
           PolicyDocument:
             Version: 2012-10-17
