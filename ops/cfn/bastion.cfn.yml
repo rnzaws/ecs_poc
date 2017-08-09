@@ -26,20 +26,20 @@ AWSTemplateFormatVersion: '2010-09-09'
 Parameters:
 
   VpcStackName:
-    Description: Active CloudFormation stack containing VPC resources.
+    Description: "Active CloudFormation stack containing VPC resources"
     Type: String
     MinLength: 1
     MaxLength: 255
     AllowedPattern: "^[a-zA-Z][-a-zA-Z0-9]*$"
 
   InstanceKeyName:
-    Description: EC2 key pair name for bastion host SSH access
+    Description: "EC2 key pair name for bastion host SSH access"
     Type: String
     MinLength: 1
     MaxLength: 255
     AllowedPattern: "[\\x20-\\x7E]*"
     Default: "rnzdev"
-    ConstraintDescription: Key pair name can contain only ASCII characters.
+    ConstraintDescription: "Key pair name can contain only ASCII characters"
 
   BastionAmiId:
     Type: String
