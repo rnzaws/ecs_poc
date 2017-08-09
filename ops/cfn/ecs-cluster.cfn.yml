@@ -430,6 +430,11 @@ Resources:
 
 Outputs:
 
+  RoleArn:
+    Value: !GetAtt Role.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-cluster-role-arn"
+
   ClusterName:
     Value: !Ref Cluster
     Export:
