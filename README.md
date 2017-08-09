@@ -56,15 +56,11 @@ Both of these projects are excellent starting points for ECS (hence why we based
 but we were looking for additional best practices and examples. The main extension points in this POC are:
 
 * Event notifications via [Amazon Simple Notification Service (SNS)](https://aws.amazon.com/sns/)
-* ECS cluster host logging to [Amazon CloudWatch Logs](http://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/WhatIsCloudWatchLogs.html)
-* ECS task logging to Amazon CloudWatch Logs
+* ECS cluster host and task logging to [Amazon CloudWatch Logs](http://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/WhatIsCloudWatchLogs.html)
 * Some control for service developers of their configuration/deployment
 * Task specific [IAM Roles](http://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html) for containers
 
-
-
-
-
-
+Instead of having multiple reference architectures, we will probably be issuing some pull requests, once everything in this
+project is flushed out.
 
 
