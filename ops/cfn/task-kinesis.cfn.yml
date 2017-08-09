@@ -35,7 +35,7 @@ Resources:
 
 Outputs:
 
-  KinesisStream404name:
+  KinesisStream404Name:
     Value: !Ref KinesisStream404
     Export:
       Name: !Sub "${AWS::StackName}-kinesis-stream-404-name"
