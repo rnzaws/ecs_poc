@@ -1,0 +1,47 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+
+# Any code, applications, scripts, templates, proofs of concept,
+# documentation and other items are provided for illustration purposes only.
+#
+# Copyright 2017 Amazon Web Services
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+Parameters:
+
+  KinesisStreamShardCount404:
+    Type: Number
+    Default: 1
+    Description: "Shard count for kinesis stream 404"
+
+Resources:
+
+  KinesisStream404:
+    Type: "AWS::Kinesis::Stream"
+    Properties:
+      Name: !Sub "stream-404-${AWS::StackName}"
+      ShardCount: !Ref KinesisStreamShardCount404
+
+Outputs:
+
+  KinesisStream404name:
+    Value: !Ref KinesisStream404
+    Export:
+      Name: !Sub "${AWS::StackName}-kinesis-stream-404-name"
+
+  KinesisStream404Arn:
+    Value: !GetAtt KinesisStream404.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-kinesis-stream-404-arn"
+
