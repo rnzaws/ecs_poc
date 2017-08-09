@@ -19,4 +19,24 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-***
+---
+
+## Overview
+
+The goal of this POC is to provide a fully automated stack that can be deployed N times
+per AWS account and provide additional visibility (via events sent to SNS topics) into various ECS
+operations. As with all demo open source code, please review and test extensively to verify
+that all of your use cases are covered.
+
+---
+
+## Network
+
+The VPC setup and bastion server CloudFormation templates are based on the
+[AWS Startup Kit Templates](https://github.com/awslabs/startup-kit-templates). Please [review the README](https://github.com/awslabs/startup-kit-templates/blob/master/README.md)
+file for a more detailed explanation of the network and bastion server. In this example, the bastion server
+security group is not IP restricted (allows 0.0.0.0/0), but you can pass in a SshFrom parameter to the 
+basion.cfm.yml stack to restrict access to specific IP addresses. We highly recommend isolating access to your
+bastion server.
+
+
