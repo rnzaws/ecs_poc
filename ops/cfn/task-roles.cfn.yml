@@ -1,0 +1,68 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+
+# Any code, applications, scripts, templates, proofs of concept,
+# documentation and other items are provided for illustration purposes only.
+#
+# Copyright 2017 Amazon Web Services
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+Parameters:
+
+  TaskKinesisStackName:
+    Type: String
+    MinLength: 1
+    MaxLength: 255
+    Description: "Task kinesis stack name"
+
+Resources:
+
+  #
+  # Define a role for each service here. It is too dangerous to let the services
+  # define their own roles.
+  #
+
+  EcsTaskRole404:
+    Type: "AWS::IAM::Role"
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument: |
+        {
+            "Statement": [{
+                "Effect": "Allow",
+                "Principal": { "Service": [ "ecs-tasks.amazonaws.com" ] },
+                "Action": [ "sts:AssumeRole" ]
+            }]
+        }
+      Policies:
+        - PolicyName: "cloudwatch-logs-create-log-group"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "kinesis:PutRecord"
+                  - "kinesis:PutRecords"
+                Resource:
+                  - Fn::ImportValue: !Sub "${TaskKinesisStackName}-kinesis-stream-404-arn"
+
+Outputs:
+
+  EcsTaskRole404Arn:
+    Value: !GetAtt EcsTaskRole404.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-task-role-404-arn"
+
+
+
