@@ -231,7 +231,8 @@ Resources:
             Version: 2012-10-17
             Statement:
               - Resource:
-                  Fn::ImportValue: !Sub "${TaskRoleStackName}-task-role-${GitHubSourceRepo}-arn"
+                  - Fn::ImportValue: !Sub "${TaskRoleStackName}-task-role-${GitHubSourceRepo}-arn"
+                  - Fn::ImportValue: !Sub "${TaskRoleStackName}-ecs-service-role-arn"
                 Effect: Allow
                 Action:
                   - "iam:PassRole"
