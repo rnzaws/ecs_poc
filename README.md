@@ -249,7 +249,7 @@ programmatically.
 
 Logging is a basic tenet of software development. If something fails unexpectedly, and the application does not
 know how to handle this failure, it is a common practice to log (one way or another) the failure. In addition to
-application logging, operating system logging is also important. Both (soft errors)[https://en.wikipedia.org/wiki/Soft_error]
+application logging, operating system logging is also important. Both [soft errors](https://en.wikipedia.org/wiki/Soft_error)
 and bugs do occur, so providing visibility via logging is important.
 
 In this POC, we log everything to [Amazon CloudWatch Logs](http://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/WhatIsCloudWatchLogs.html).
