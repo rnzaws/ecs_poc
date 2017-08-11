@@ -176,7 +176,7 @@ To solve this problem, you can create a scheduled Lambda function to monitor you
 #### Container Instance State Change
 The ECS container instance firehose. This is a feed of all state changes in the container instance.
 
-The firehose is greate for collecting metrics and verifying state, but is noisy and should be analyzed
+The firehose is great for collecting metrics and verifying state, but is noisy and should be analyzed
 programmatically.
 
 
@@ -254,7 +254,7 @@ The following host OS files are monitored and sent to CloudWatch Logs:
 
 A best practice for logging in containers or applications is to simply configure log libraries to write to
 [STDOUT](https://en.wikipedia.org/wiki/Standard_streams#Standard_output_.28stdout.29). By allowing an application
-write diretly to STDOUT, you decouple your log storage from your application, which creates more freedom
+write directly to STDOUT, you decouple your log storage from your application, which creates more freedom
 for in routing/processing.
 
 With ECS, you can [configure your tasks to use the awslogs log driver](http://docs.aws.amazon.com/AmazonECS/latest/developerguide/using_awslogs.html)
@@ -268,7 +268,7 @@ The VPC setup and bastion server CloudFormation templates are based on the
 [AWS Startup Kit Templates](https://github.com/awslabs/startup-kit-templates). Please [review the README](https://github.com/awslabs/startup-kit-templates/blob/master/README.md)
 for a more detailed explanation of the network and bastion server. In this example, the bastion server
 security group is not IP restricted (allows 0.0.0.0/0), but you can pass in a SshFrom parameter to the
-basion.cfm.yml stack to restrict access to specific IP addresses. We highly recommend isolating access to your
+bastion.cfm.yml stack to restrict access to specific IP addresses. We highly recommend isolating access to your
 bastion server.
 
 ---
