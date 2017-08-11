@@ -65,10 +65,10 @@ project is flushed out.
 This POC builds and deploys the test services below to the ECS cluster. Changes to the test service can be made and once
 committed to the GitHub branch the CodePipeline is listening on (master by default), a new build/deploy will be triggered.
 
-| Service         | GitHub                                |
-|---------------- | ------------------------------------- |
-| 404 Not Found   | [https://github.com/rnzsgh/404]       |
-| PHP Hello       | [https://github.com/rnzsgh/php-hello] |
+| Service         | GitHub                              |
+|---------------- | ----------------------------------- |
+| 404 Not Found   | https://github.com/rnzsgh/404       |
+| PHP Hello       | https://github.com/rnzsgh/php-hello |
 
 ---
 
