@@ -123,12 +123,10 @@ In this POC, new releases are done via [AWS CodePipeline](https://aws.amazon.com
 template contains errors or there are system problems, this rule will match. For information on the errors this rule attempts
 to match, see the [CloudFormation Common Errors](http://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/CommonErrors.html) documentation.
 
-To test this event, add some random text to the service template that is not valid for a CloudFormation template
-and then trigger the build/release.
+TODO: How do we test this event?
 
-Currently, CodePipeline does not support notifications, so it is still possible for the deployment to fail without a
-notification. To solve this problem, you can create a scheduled Lambda function to monitor your CodePipeline
-and CloudFormation stacks.
+Currently, CodePipeline does not support notifications, so it is still possible for the deployment to fail without an event.
+To solve this problem, you can create a scheduled Lambda function to monitor your CodePipeline and CloudFormation stacks.
 
 ```json
 {
@@ -174,6 +172,10 @@ and CloudFormation stacks.
 #### Container Instance State Change
 The ECS container instance firehose. This is a feed of all state changes in the container instance.
 
+The firehose is greate for collecting metrics and verifying state, but is noisy and should be analyzed
+programmatically.
+
+
 ```json
 {
   "detail-type": [
@@ -193,6 +195,10 @@ The ECS container instance firehose. This is a feed of all state changes in the 
 
 #### Task State Change
 The ECS task firehose. This is a feed of all state changes for a task.
+
+The firehose is greate for collecting metrics and verifying state, but is noisy and should be analyzed
+programmatically.
+
 
 ```json
 {
