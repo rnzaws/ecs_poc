@@ -50,6 +50,17 @@ project is flushed out.
 
 ---
 
+## Sample Services
+
+This POC builds and deploys the following test services to the ECS cluster:
+
+| Service         | GitHub                                |
+|---------------- | ------------------------------------- |
+| 404 Not Found   | [https://github.com/rnzsgh/404]       |
+| PHP Hello       | [https://github.com/rnzsgh/php-hello] |
+
+---
+
 ## Amazon CloudWatch Events
 
 To provide additional visibility into ECS, this project added several
@@ -241,7 +252,7 @@ definition. The ECS documentation provides additional information on the [servic
 The following host OS files are monitored and sent to CloudWatch Logs:
 
 
-| File                        | Purpose |
+| Log File                    | Purpose |
 |---------------------------- | ---------
 | /var/log/dmesg              | Log information for device drivers (most useful during boot) |
 | /var/log/messages           | Global system messages including cron, daemon, kern, auth, etc. |
@@ -259,6 +270,14 @@ in routing/processing.
 
 With ECS, you can [configure your tasks to use the awslogs log driver](http://docs.aws.amazon.com/AmazonECS/latest/developerguide/using_awslogs.html)
 to centralize your logging in CloudWatch Logs.
+
+---
+
+## Task/Container Level Permissions
+
+In line with [granting least privilege](http://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#grant-least-privilege) access to
+applications/services, ECS supports assigning [IAM roles to tasks](http://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html).
+With IAM Roles for tasks, you can grant the container access to only the services it needs to access.
 
 ---
 
