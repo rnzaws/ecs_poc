@@ -190,7 +190,6 @@ programmatically.
     ]
   }
 }
-
 ```
 
 #### Task State Change
@@ -215,9 +214,6 @@ programmatically.
   }
 }
 ```
-
-
-
 
 ---
 
