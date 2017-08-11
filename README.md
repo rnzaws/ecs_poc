@@ -60,7 +60,8 @@ For more information about the events ECS publishes, see the [Amazon ECS Event S
 
 ### Event Rules
 
-The following are the event rules created in the CloudFormation templates:
+The rules below are created in the CloudFormation templates. ECS is a highly resilient service that is capable
+of recovering from failures, but visibility is key to any [well-architected](https://aws.amazon.com/architecture/well-architected/) system.
 
 #### Inactive Host
 The following rule sends an event to a topic if the ECS instance has an INACTIVE state. You can test this
@@ -85,6 +86,93 @@ rule will also match.
   }
 }
 ```
+
+#### Essential Stopped Task
+If one of your containers fails this event is triggered. You can test this by manually stopping the Docker
+container on the ECS instance or by adding code that triggers a process exit inside your Docker image.
+
+The rule will not match if you deploy a build and your old containers are stopped.
+
+```json
+{
+  "detail-type": [
+    "ECS Task State Change"
+  ],
+  "source": [
+    "aws.ecs"
+  ],
+  "detail": {
+    "taskDefinitionArn": [
+      "ARN_OF_TASK_DEFINITION"
+    ],
+    "stoppedReason": [
+      "Essential container in task exited"
+    ],
+    "lastStatus": [
+      "STOPPED"
+    ],
+    "desiredStatus": [
+      "STOPPED"
+    ]
+  }
+}
+```
+
+#### Basic CloudFormation Deploy Error
+In this POC, new releases are done via [AWS CodePipeline](https://aws.amazon.com/codepipeline/). If your CloudFormation
+template contains errors or there are system problems, this rule will match. For information on the errors this rule attempts
+to match, see the [CloudFormation Common Errors](http://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/CommonErrors.html) documentation.
+
+To test this event, add some random text to the service template that is not valid for a CloudFormation template
+and then trigger the build/release.
+
+Currently, CodePipeline does not support notifications, so it is still possible for the deployment to fail without a
+notification. To solve this problem, you can create a scheduled Lambda function to monitor your CloudFormation stacks.
+
+```json
+{
+  "source": [
+    "aws.cloudformation"
+  ],
+  "detail": {
+    "errorCode": [
+      "AccessDeniedException",
+      "IncompleteSignature",
+      "InternalFailure",
+      "InvalidAction",
+      "InvalidClientTokenId",
+      "InvalidParameterCombination",
+      "InvalidParameterValue",
+      "InvalidQueryParameter",
+      "MalformedQueryString",
+      "MissingAction",
+      "MissingAuthenticationToken",
+      "MissingParameter",
+      "OptInRequired",
+      "RequestExpired",
+      "ServiceUnavailable",
+      "ThrottlingException",
+      "ValidationError"
+    ],
+    "userIdentity": {
+      "sessionContext": {
+        "sessionIssuer": {
+          "arn": [
+            "CODE_PIPELINE_SERVICE_ROLE_ARN"
+          ]
+        }
+      },
+      "invokedBy": [
+        "codepipeline.amazonaws.com"
+      ]
+    }
+  }
+}
+```
+
+#### Essential Stopped Task
+
+
 
 ---
 
