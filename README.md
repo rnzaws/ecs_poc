@@ -27,8 +27,7 @@ limitations under the License.
 3. [Amazon CloudWatch Events](#amazon-cloudwatch-events)
 4. [Amazon CloudWatch Logs](#amazon-cloudwatch-logs)
 5. [Task Level Permissions](#task-level-permissions)
-6. [Network](#network)
-7. [CloudFormation Templates](#cloudformation-templates)
+6. [CloudFormation Templates](#cloudformation-templates)
 
 ---
 
@@ -293,7 +292,9 @@ With IAM Roles for tasks, you can grant the container access to only the service
 
 ---
 
-## Network
+## CloudFormation Templates
+
+### Network
 
 The VPC setup and bastion server CloudFormation templates are based on the
 [AWS Startup Kit Templates](https://github.com/awslabs/startup-kit-templates). Please [review the README](https://github.com/awslabs/startup-kit-templates/blob/master/README.md)
@@ -301,10 +302,6 @@ for a more detailed explanation of the network and bastion server. In this examp
 security group is not IP restricted (allows 0.0.0.0/0), but you can pass in a SshFrom parameter to the
 bastion.cfm.yml stack to restrict access to specific IP addresses. We highly recommend isolating access to your
 bastion server.
-
----
-
-## CloudFormation Templates
 
 
 
