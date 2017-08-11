@@ -50,6 +50,46 @@ project is flushed out.
 
 ---
 
+## Amazon CloudWatch Events
+
+In order to additional better visibility into ECS, this project added several
+[CloudWatch Event Rules](http://docs.aws.amazon.com/AmazonCloudWatch/latest/events/WhatIsCloudWatchEvents.html) that send matched
+events to SNS topics.
+
+For more information about the events ECS publishes, see the [Amazon ECS Event Stream for CloudWatch Events](http://docs.aws.amazon.com/AmazonECS/latest/developerguide/cloudwatch_event_stream.html) documentation.
+
+### Event Rules
+
+The following are the event rules created in the CloudFormation templates:
+
+```json
+{
+  "detail-type": [
+    "ECS Container Instance State Change"
+  ],
+  "source": [
+    "aws.ecs"
+  ],
+  "detail": {
+    "clusterArn": [
+      "SET_ARN_OF_ECS_CLUSTER"
+    ],
+    "status": [
+      "INACTIVE"
+    ]
+  }
+}
+```
+
+---
+
+## Amazon CloudWatch Logs
+
+
+
+
+---
+
 ## Network
 
 The VPC setup and bastion server CloudFormation templates are based on the
