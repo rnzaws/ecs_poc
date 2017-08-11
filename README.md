@@ -21,7 +21,7 @@ limitations under the License.
 
 ---
 
-# Table of Contents
+## Table of Contents
 1. [Overview](#overview)
 2. [Sample Services](#sample-services)
 3. [Amazon CloudWatch Events](#amazon-cloudwatch-events)
