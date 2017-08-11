@@ -63,6 +63,10 @@ For more information about the events ECS publishes, see the [Amazon ECS Event S
 The rules below are created in the CloudFormation templates. ECS is a highly resilient service that is capable
 of recovering from failures, but visibility is key to any [well-architected](https://aws.amazon.com/architecture/well-architected/) system.
 
+All of the rules created by the POC CloudFormation templates send their matched events to specific SNS topics that are also created
+by the stack.
+
+
 #### Inactive Host
 The following rule sends an event to a topic if the ECS instance has an INACTIVE state. You can test this
 event by terminating an EC2 instance in your test ECS cluster. If your ECS cluster auto scales down, this
@@ -119,11 +123,11 @@ The rule will not match if you deploy a new release and your old containers are 
 ```
 
 #### Basic CloudFormation Deploy Error
-In this POC, new releases are done via [AWS CodePipeline](https://aws.amazon.com/codepipeline/). If your CloudFormation
+In this POC, new releases are trigged, built and deployed via [AWS CodePipeline](https://aws.amazon.com/codepipeline/). If your CloudFormation
 template contains errors or there are system problems, this rule will match. For information on the errors this rule attempts
 to match, see the [CloudFormation Common Errors](http://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/CommonErrors.html) documentation.
 
-TODO: How do we test this event?
+TODO: How do we test this event? Does this match syntax errors?
 
 Currently, CodePipeline does not support notifications, so it is still possible for the deployment to fail without an event.
 To solve this problem, you can create a scheduled Lambda function to monitor your CodePipeline and CloudFormation stacks.
@@ -219,8 +223,32 @@ programmatically.
 
 ## Amazon CloudWatch Logs
 
+"Everything fails, all the time." *-- Werner Vogels*
+
+Logging is a basic tenet of software development. If something unexpectedly fails and the application does not
+know how to handle this failure, it is a common practice to log (one way or another) the failure. In addition to
+application logging, operating system logging is also important. Both (soft errors)[https://en.wikipedia.org/wiki/Soft_error]
+and bugs do occur, so providing visibility via logging is important.
+
+In this POC, we log everything to [Amazon CloudWatch Logs](http://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/WhatIsCloudWatchLogs.html).
+
+### Host Operating System Logging
+
+The [Amazon CloudWatch Logs Agent](http://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/QuickStartEC2Instance.html) is installed
+and configured on the host OS as a part of the [Launch Configuration](http://docs.aws.amazon.com/autoscaling/latest/userguide/LaunchConfiguration.html)
+definition. The ECS documentation provides additional information on the [service specific log files](http://docs.aws.amazon.com/AmazonECS/latest/developerguide/logs.html).
+
+The following host OS files are monitored and sent to CloudWatch Logs:
 
 
+| File                        | Purpose |
+|---------------------------- | ---------
+| /var/log/dmesg              | Log information for device drivers (most useful during boot) |
+| /var/log/messages           | Global system messages including cron, daemon, kern, auth, etc. |
+| /var/log/docker             | Log information for the Docker daemon |
+| /var/log/ecs/ecs-agent.log  | The ECS agent log (also includes Docker events) |
+| /var/log/ecs/ecs-init.log   | Log information for the container service |
+| /var/log/ecs/audit.log      | Audit information about credentials provided to tasks via IAM roles |
 
 ---
 
