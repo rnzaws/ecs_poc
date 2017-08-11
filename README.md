@@ -250,6 +250,16 @@ The following host OS files are monitored and sent to CloudWatch Logs:
 | /var/log/ecs/ecs-init.log   | Log information for the container service |
 | /var/log/ecs/audit.log      | Audit information about credentials provided to tasks via IAM roles |
 
+### Task Logging
+
+A best practice for logging in containers or applications is to simply configure log libraries to write to
+[STDOUT](https://en.wikipedia.org/wiki/Standard_streams#Standard_output_.28stdout.29). By allowing an application
+write diretly to STDOUT, you decouple your log storage from your application, which creates more freedom
+for in routing/processing.
+
+With ECS, you can [configure your tasks to use the awslogs log driver](http://docs.aws.amazon.com/AmazonECS/latest/developerguide/using_awslogs.html)
+to centralize your logging in CloudWatch Logs.
+
 ---
 
 ## Network
