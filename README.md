@@ -21,6 +21,15 @@ limitations under the License.
 
 ---
 
+# Table of Contents
+1. [Overview](#overview)
+2. [Sample Services](#sample-services)
+3. [Amazon CloudWatch Events](#amazon-cloudwatch-events)
+4. [Network](#network)
+5. [CloudFormation Templates](#cloudformation-templates)
+
+---
+
 ## Overview
 
 The goal of this POC is to provide an example of an automated ECS stack that can be deployed N times
@@ -52,7 +61,8 @@ project is flushed out.
 
 ## Sample Services
 
-This POC builds and deploys the following test services to the ECS cluster:
+This POC builds and deploys the test services below to the ECS cluster. Changes to the test service can be made and once
+committed to the GitHub branch the CodePipeline is listening on (master by default), a new build/deploy will be triggered.
 
 | Service         | GitHub                                |
 |---------------- | ------------------------------------- |
@@ -291,6 +301,8 @@ bastion.cfm.yml stack to restrict access to specific IP addresses. We highly rec
 bastion server.
 
 ---
+
+## CloudFormation Templates
 
 
 
