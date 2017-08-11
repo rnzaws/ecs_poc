@@ -52,7 +52,7 @@ project is flushed out.
 
 ## Amazon CloudWatch Events
 
-In order to additional better visibility into ECS, this project added several
+To provide additional visibility into ECS, this project added several
 [CloudWatch Event Rules](http://docs.aws.amazon.com/AmazonCloudWatch/latest/events/WhatIsCloudWatchEvents.html) that send matched
 events to SNS topics.
 
@@ -61,6 +61,11 @@ For more information about the events ECS publishes, see the [Amazon ECS Event S
 ### Event Rules
 
 The following are the event rules created in the CloudFormation templates:
+
+#### Inactive Host
+The following rule sends an event to a topic if the ECS instance has an INACTIVE state. You can test this
+event by terminating an EC2 instance in your test ECS cluster. If your ECS cluster auto scales down, this
+rule will also match.
 
 ```json
 {
@@ -72,7 +77,7 @@ The following are the event rules created in the CloudFormation templates:
   ],
   "detail": {
     "clusterArn": [
-      "SET_ARN_OF_ECS_CLUSTER"
+      "SET_ARN_OF_YOUR_ECS_CLUSTER"
     ],
     "status": [
       "INACTIVE"
