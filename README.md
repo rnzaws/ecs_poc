@@ -91,7 +91,7 @@ rule will also match.
 If one of your containers fails this event is triggered. You can test this by manually stopping the Docker
 container on the ECS instance or by adding code that triggers a process exit inside your Docker image.
 
-The rule will not match if you deploy a build and your old containers are stopped.
+The rule will not match if you deploy a new release and your old containers are stopped.
 
 ```json
 {
@@ -103,7 +103,7 @@ The rule will not match if you deploy a build and your old containers are stoppe
   ],
   "detail": {
     "taskDefinitionArn": [
-      "ARN_OF_TASK_DEFINITION"
+      "ARN_OF_YOUR_TASK_DEFINITION"
     ],
     "stoppedReason": [
       "Essential container in task exited"
@@ -127,7 +127,8 @@ To test this event, add some random text to the service template that is not val
 and then trigger the build/release.
 
 Currently, CodePipeline does not support notifications, so it is still possible for the deployment to fail without a
-notification. To solve this problem, you can create a scheduled Lambda function to monitor your CloudFormation stacks.
+notification. To solve this problem, you can create a scheduled Lambda function to monitor your CodePipeline
+and CloudFormation stacks.
 
 ```json
 {
@@ -158,7 +159,7 @@ notification. To solve this problem, you can create a scheduled Lambda function 
       "sessionContext": {
         "sessionIssuer": {
           "arn": [
-            "CODE_PIPELINE_SERVICE_ROLE_ARN"
+            "YOUR_CODE_PIPELINE_SERVICE_ROLE_ARN"
           ]
         }
       },
@@ -170,7 +171,45 @@ notification. To solve this problem, you can create a scheduled Lambda function 
 }
 ```
 
-#### Essential Stopped Task
+#### Container Instance State Change
+The ECS container instance firehose. This is a feed of all state changes in the container instance.
+
+```json
+{
+  "detail-type": [
+    "ECS Container Instance State Change"
+  ],
+  "source": [
+    "aws.ecs"
+  ],
+  "detail": {
+    "clusterArn": [
+      "SET_ARN_OF_YOUR_ECS_CLUSTER"
+    ]
+  }
+}
+
+```
+
+#### Task State Change
+The ECS task firehose. This is a feed of all state changes for a task.
+
+```json
+{
+  "detail-type": [
+    "ECS Task State Change"
+  ],
+  "source": [
+    "aws.ecs"
+  ],
+  "detail": {
+    "clusterArn": [
+      "SET_ARN_OF_YOUR_ECS_CLUSTER"
+    ]
+  }
+}
+```
+
 
 
 
