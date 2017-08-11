@@ -225,7 +225,7 @@ programmatically.
 
 "Everything fails, all the time." *-- Werner Vogels*
 
-Logging is a basic tenet of software development. If something unexpectedly fails and the application does not
+Logging is a basic tenet of software development. If something fails unexpectedly, and the application does not
 know how to handle this failure, it is a common practice to log (one way or another) the failure. In addition to
 application logging, operating system logging is also important. Both (soft errors)[https://en.wikipedia.org/wiki/Soft_error]
 and bugs do occur, so providing visibility via logging is important.
