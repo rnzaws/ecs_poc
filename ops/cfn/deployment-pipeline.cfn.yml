@@ -253,8 +253,7 @@ Resources:
           PolicyDocument:
             Version: 2012-10-17
             Statement:
-              - Resource:
-                  Fn::ImportValue: !Sub "${AlbStackName}-load-balancer-arn"
+              - Resource: "*"
                 Effect: Allow
                 Action:
                   - "elasticloadbalancing:ConfigureHealthCheck"
