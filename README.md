@@ -25,8 +25,10 @@ limitations under the License.
 1. [Overview](#overview)
 2. [Sample Services](#sample-services)
 3. [Amazon CloudWatch Events](#amazon-cloudwatch-events)
-4. [Network](#network)
-5. [CloudFormation Templates](#cloudformation-templates)
+4. [Amazon CloudWatch Logs](#amazon-cloudwatch-logs)
+5. [Task Level Permissions](#task-level-permissions)
+6. [Network](#network)
+7. [CloudFormation Templates](#cloudformation-templates)
 
 ---
 
@@ -283,7 +285,7 @@ to centralize your logging in CloudWatch Logs.
 
 ---
 
-## Task/Container Level Permissions
+## Task Level Permissions
 
 In line with [granting least privilege](http://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#grant-least-privilege) access to
 applications/services, ECS supports assigning [IAM roles to tasks](http://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html).
