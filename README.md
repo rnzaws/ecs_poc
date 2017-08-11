@@ -245,7 +245,7 @@ programmatically.
 
 ## Amazon CloudWatch Logs
 
-"Everything fails, all the time." *-- Werner Vogels*
+"Everything fails, all the time." *-- ]Werner Vogels](https://en.wikipedia.org/wiki/Werner_Vogels)*
 
 Logging is a basic tenet of software development. If something fails unexpectedly, and the application does not
 know how to handle this failure, it is a common practice to log (one way or another) the failure. In addition to
