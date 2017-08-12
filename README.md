@@ -352,6 +352,10 @@ You can also place the ProxyCommand configuration in your local [SSH config file
 
 ### Load Balancer
 
+The [Application Load Balancer](http://docs.aws.amazon.com/elasticloadbalancing/latest/application/introduction.html) (ALB) is a
+[Layer 7](https://en.wikipedia.org/wiki/OSI_model#Layer_7:_Application_Layer) HTTP/HTTPS router that supports both host and
+path-based rules. With ALB, you can have a variety of services in ECS, with different endpoints running on the same load balancer.
+
 [ops/cfn/load-balancer.cfn.yml](ops/cfn/load-balancer.cfn.yml)
 
 ### ECS Cluster
