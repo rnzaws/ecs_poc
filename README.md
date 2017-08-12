@@ -306,7 +306,7 @@ The CI stack creates a [Amazon EC2 Container Registry](https://aws.amazon.com/ec
 ECR supports Docker Manifest V2, Schema 2. ECR is integrates with IAM, so you can have a central set of credentials/permissions/security
 for accessing your Docker images.
 
-* ops/cfn/ci-repository.cfn.yml
+* [ops/cfn/ci-repository.cfn.yml](ops/cfn/ci-repository.cfn.yml)
 
 ### Network
 
@@ -316,7 +316,7 @@ Please [review the README](https://github.com/awslabs/startup-kit-templates/blob
 for a more detailed explanation of the network and bastion server.
 
 
-* ops/cfn/vpc.cfn.yml
+* [ops/cfn/vpc.cfn.yml](ops/cfn/vpc.cfn.yml)
 
 ### Bastion
 
@@ -327,26 +327,26 @@ pass in a SshFrom parameter to the bastion.cfm.yml stack to restrict access to s
 We highly recommend isolating access to your bastion server.
 
 
-* ops/cfn/bastion.cfn.yml
+* [ops/cfn/bastion.cfn.yml](ops/cfn/bastion.cfn.yml)
 
 ### Load Balancer
 
-* ops/cfn/load-balancer.cfn.yml
+* [ops/cfn/load-balancer.cfn.yml](ops/cfn/load-balancer.cfn.yml)
 
 ### ECS Cluster
 
-* ops/cfn/ecs-cluster.cfn.yml
+* [ops/cfn/ecs-cluster.cfn.yml](ops/cfn/ecs-cluster.cfn.yml)
 
 ### Kinesis
 
-* ops/cfn/system-kinesis.cfn.yml
+* [ops/cfn/system-kinesis.cfn.yml](ops/cfn/system-kinesis.cfn.yml)
 
 ### Task Roles
 
-* ops/cfn/task-roles.cfn.yml
+* [ops/cfn/task-roles.cfn.yml](ops/cfn/task-roles.cfn.yml)
 
 ### Continnous Integration and Deployment
 
-* ops/cfn/deployment-pipeline.cfn.yml
+* [ops/cfn/deployment-pipeline.cfn.yml](ops/cfn/deployment-pipeline.cfn.yml)
 
 
