@@ -7,8 +7,7 @@ documentation and other items are provided for illustration purposes only.
 
 Copyright 2017 Amazon Web Services
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
   http://www.apache.org/licenses/LICENSE-2.0
@@ -386,7 +385,12 @@ grant access to the services/resources they require.
 
 [ops/cfn/task-roles.cfn.yml](ops/cfn/task-roles.cfn.yml)
 
-### Continnous Integration and Deployment
+### Continuous Integration and Deployment
+
+The core of the [CI/CD](https://en.wikipedia.org/wiki/CI/CD) process in this POC is the [AWS CodePipeline](https://aws.amazon.com/codepipeline/).
+For each service deployed to the ECS cluster, you should create at least one CFN CI/CD stack. The pipeline created for each service is triggered by a commit
+to the [GitHub](github.com/) branch that is configured. Once the pipeline is triggered, an [AWS CodeBuild](https://aws.amazon.com/codebuild/)
+ stage is executed and the process runs the logic defined in the [build spec file](http://docs.aws.amazon.com/codebuild/latest/userguide/build-spec-ref.html).
 
 [ops/cfn/deployment-pipeline.cfn.yml](ops/cfn/deployment-pipeline.cfn.yml)
 
