@@ -299,7 +299,7 @@ With IAM Roles for tasks, you can grant the container access only to the service
 The bootstrap CFN template creates a default bucket than can be used for deploying builds and enables an [AWS CloudTrail](https://aws.amazon.com/cloudtrail/).
 If you deploy multiple ECS clusters in the same account, you should only need to create only one bootstrap stack.
 
-* ops/cfn/bootstrap.cfn.yml
+* [ops/cfn/bootstrap.cfn.yml](ops/cfn/bootstrap.cfn.yml)
 
 ### Container Registry
 The CI stack creates a [Amazon EC2 Container Registry](https://aws.amazon.com/ecr/) (ECR), which is a fully-managed Docker container registry.
@@ -348,8 +348,5 @@ We highly recommend isolating access to your bastion server.
 ### Continnous Integration and Deployment
 
 * ops/cfn/deployment-pipeline.cfn.yml
-
-
-
 
 
