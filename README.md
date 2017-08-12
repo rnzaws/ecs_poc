@@ -296,18 +296,19 @@ With IAM Roles for tasks, you can grant the container access only to the service
 ## CloudFormation Templates
 
 ### Bootstrap
-The bootstrap CFN template creates a default bucket than can be used for deploying builds and enables an [AWS CloudTrail](https://aws.amazon.com/cloudtrail/).
+The bootstrap CFN template creates a default bucket that can be used for deploying builds, and enables [AWS CloudTrail](https://aws.amazon.com/cloudtrail/).
 You should only need to create only one bootstrap stack per account, but you are free to create as many as you would like, and there
 will not be naming conflicts.
 
-* [ops/cfn/bootstrap.cfn.yml](ops/cfn/bootstrap.cfn.yml)
+[ops/cfn/bootstrap.cfn.yml](ops/cfn/bootstrap.cfn.yml)
 
 ### Container Registry
 The CI stack creates a [Amazon EC2 Container Registry](https://aws.amazon.com/ecr/) (ECR), which is a fully-managed Docker container registry.
-ECR supports Docker Manifest V2, Schema 2. ECR integrates with IAM, so you can have a central set of credentials/permissions/security
-for accessing your Docker images. Usually, one registry is enough per account.
+ECR supports [Docker Manifest V2, Schema 2](https://docs.docker.com/registry/spec/manifest-v2-2/).
+ECR integrates with IAM, so you can have a central set of credentials/permissions/security
+for accessing your Docker images. Usually, one registry per account is enough.
 
-* [ops/cfn/ci-repository.cfn.yml](ops/cfn/ci-repository.cfn.yml)
+[ops/cfn/ci-repository.cfn.yml](ops/cfn/ci-repository.cfn.yml)
 
 ### Network
 
@@ -316,7 +317,7 @@ The VPC setup CloudFormation template is based on the
 Please [review the README](https://github.com/awslabs/startup-kit-templates/blob/master/README.md)
 for a detailed explanation of the network configuration.
 
-* [ops/cfn/vpc.cfn.yml](ops/cfn/vpc.cfn.yml)
+[ops/cfn/vpc.cfn.yml](ops/cfn/vpc.cfn.yml)
 
 ### Bastion
 
@@ -331,8 +332,7 @@ pass in a SshFrom parameter to the bastion.cfm.yml stack to restrict access to s
 We *highly* recommend restricting access to your bastion host by IP address. Also, it is a best practice
 to stop the bastion server if you do not need access to any servers.
 
-
-* [ops/cfn/bastion.cfn.yml](ops/cfn/bastion.cfn.yml)
+[ops/cfn/bastion.cfn.yml](ops/cfn/bastion.cfn.yml)
 
 A common [anti-pattern](https://en.wikipedia.org/wiki/Anti-pattern)  with bastion hosts is to place SSH keys on
 them that allow access to the destination server. In this model, you connect to the bastion host and then issue
@@ -350,22 +350,22 @@ You can place the ProxyCommand configuration in your local [SSH config file](htt
 
 ### Load Balancer
 
-* [ops/cfn/load-balancer.cfn.yml](ops/cfn/load-balancer.cfn.yml)
+[ops/cfn/load-balancer.cfn.yml](ops/cfn/load-balancer.cfn.yml)
 
 ### ECS Cluster
 
-* [ops/cfn/ecs-cluster.cfn.yml](ops/cfn/ecs-cluster.cfn.yml)
+[ops/cfn/ecs-cluster.cfn.yml](ops/cfn/ecs-cluster.cfn.yml)
 
 ### Kinesis
 
-* [ops/cfn/system-kinesis.cfn.yml](ops/cfn/system-kinesis.cfn.yml)
+[ops/cfn/system-kinesis.cfn.yml](ops/cfn/system-kinesis.cfn.yml)
 
 ### Task Roles
 
-* [ops/cfn/task-roles.cfn.yml](ops/cfn/task-roles.cfn.yml)
+[ops/cfn/task-roles.cfn.yml](ops/cfn/task-roles.cfn.yml)
 
 ### Continnous Integration and Deployment
 
-* [ops/cfn/deployment-pipeline.cfn.yml](ops/cfn/deployment-pipeline.cfn.yml)
+[ops/cfn/deployment-pipeline.cfn.yml](ops/cfn/deployment-pipeline.cfn.yml)
 
 
