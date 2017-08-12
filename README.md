@@ -319,7 +319,7 @@ for a detailed explanation of the network configuration.
 
 [ops/cfn/vpc.cfn.yml](ops/cfn/vpc.cfn.yml)
 
-### Bastion
+### Bastion Host
 
 Per best practices, the ECS instances all have [private IP addresses](https://en.wikipedia.org/wiki/Private_network),
 so if you need to access an instance via SSH, you will need to proxy through a [bastion host](https://en.wikipedia.org/wiki/Bastion_host).
@@ -343,11 +343,12 @@ host access is to use the SSH ProxyCommand to route additional hops through the 
 provides an example of how this is accomplished.
 
 ```bash
-ssh -i ~/.ssh/KEY_FOR_ECS_INSTANCE -o "ProxyCommand ssh -W %h:%p -i ~/.ssh/KEY_FOR_BASTION_HOST ec2-user@BASTION_HOST" ec2-user@ECS_INSTANCE_HOST
+ssh -i ~/.ssh/KEY_FOR_ECS_INSTANCE -o \
+"ProxyCommand ssh -W %h:%p -i ~/.ssh/KEY_FOR_BASTION_HOST ec2-user@BASTION_HOST" \
+ec2-user@ECS_INSTANCE_HOST
 ```
 
 You can also place the ProxyCommand configuration in your local [SSH config file](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Proxies_and_Jump_Hosts).
-
 
 ### Load Balancer
 
