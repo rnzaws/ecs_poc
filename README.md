@@ -297,37 +297,56 @@ With IAM Roles for tasks, you can grant the container access only to the service
 
 ### Bootstrap
 The bootstrap CFN template creates a default bucket than can be used for deploying builds and enables an [AWS CloudTrail](https://aws.amazon.com/cloudtrail/).
-If you deploy multiple ECS clusters in the same account, you should only need to create only one bootstrap stack.
+You should only need to create only one bootstrap stack per account, but you are free to create as many as you would like, and there
+will not be naming conflicts.
 
 * [ops/cfn/bootstrap.cfn.yml](ops/cfn/bootstrap.cfn.yml)
 
 ### Container Registry
 The CI stack creates a [Amazon EC2 Container Registry](https://aws.amazon.com/ecr/) (ECR), which is a fully-managed Docker container registry.
-ECR supports Docker Manifest V2, Schema 2. ECR is integrates with IAM, so you can have a central set of credentials/permissions/security
-for accessing your Docker images.
+ECR supports Docker Manifest V2, Schema 2. ECR integrates with IAM, so you can have a central set of credentials/permissions/security
+for accessing your Docker images. Usually, one registry is enough per account.
 
 * [ops/cfn/ci-repository.cfn.yml](ops/cfn/ci-repository.cfn.yml)
 
 ### Network
 
-The VPC setup and bastion server CloudFormation templates are based on the
-[AWS Startup Kit Templates](https://github.com/awslabs/startup-kit-templates).
+The VPC setup CloudFormation template is based on the
+[AWS Startup Kit](https://github.com/awslabs/startup-kit-templates).
 Please [review the README](https://github.com/awslabs/startup-kit-templates/blob/master/README.md)
-for a more detailed explanation of the network and bastion server.
-
+for a detailed explanation of the network configuration.
 
 * [ops/cfn/vpc.cfn.yml](ops/cfn/vpc.cfn.yml)
 
 ### Bastion
 
-TODO: Best practice ip restrict and stopping
+Per best practices, the ECS instances all have [private IP addresses](https://en.wikipedia.org/wiki/Private_network),
+so if you need to access an instance via SSH, you will need to proxy through a [bastion host](https://en.wikipedia.org/wiki/Bastion_host).
+The CloudFormation template for the bastion host is also based on the [AWS Startup Kit](https://github.com/awslabs/startup-kit-templates).
 
-In this example, the bastion server security group is not IP restricted (allows 0.0.0.0/0), but you can
+You should not need to SSH to your ECS servers because important host OS and task logs are being route to CloudWatch Logs.
+
+In this example, the bastion host security group is not IP restricted (allows 0.0.0.0/0), but you can
 pass in a SshFrom parameter to the bastion.cfm.yml stack to restrict access to specific IP addresses.
-We highly recommend isolating access to your bastion server.
+We *highly* recommend restricting access to your bastion host by IP address. Also, it is a best practice
+to stop the bastion server if you do not need access to any servers.
 
 
 * [ops/cfn/bastion.cfn.yml](ops/cfn/bastion.cfn.yml)
+
+A common [anti-pattern](https://en.wikipedia.org/wiki/Anti-pattern)  with bastion hosts is to place SSH keys on
+them that allow access to the destination server. In this model, you connect to the bastion host and then issue
+another command to SSH to the destination server using the local key. This practice is bad because if your bastion
+server is compromised, you have left the keys to the vault on the kitchen table. The recommended approach for bastion
+host access is to use the SSH ProxyCommand to route additional hops through the bastion host. The command below
+provides an example of how this is accomplished.
+
+```bash
+ssh -i ~/.ssh/KEY_FOR_ECS_INSTANCE -o "ProxyCommand ssh -W %h:%p -i ~/.ssh/KEY_FOR_BASTION_HOST ec2-user@BASTION_HOST" ec2-user@ECS_INSTANCE_HOST
+```
+
+You can place the ProxyCommand configuration in your local [SSH config file](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Proxies_and_Jump_Hosts).
+
 
 ### Load Balancer
 
