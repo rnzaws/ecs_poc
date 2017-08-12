@@ -296,7 +296,7 @@ With IAM Roles for tasks, you can grant the container access only to the service
 ## CloudFormation Templates
 
 ### Bootstrap
-The bootstrap CFN template creates a default bucket that can be used for deploying builds, and enables [AWS CloudTrail](https://aws.amazon.com/cloudtrail/).
+The bootstrap CFN template creates a default bucket that can be used for deploying stacks, and enables [AWS CloudTrail](https://aws.amazon.com/cloudtrail/).
 You should only need to create only one bootstrap stack per account, but you are free to create as many as you would like, and there
 will not be naming conflicts.
 
@@ -330,12 +330,13 @@ You should not need to SSH to your ECS servers because important host OS and tas
 In this example, the bastion host security group is not IP restricted (allows 0.0.0.0/0), but you can
 pass in a SshFrom parameter to the bastion.cfm.yml stack to restrict access to specific IP addresses.
 We *highly* recommend restricting access to your bastion host by IP address. Also, it is a best practice
-to stop the bastion server if you do not need access to any servers.
+to [stop the bastion server](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Stop_Start.html) if you do not need access
+to any internal servers.
 
 [ops/cfn/bastion.cfn.yml](ops/cfn/bastion.cfn.yml)
 
 A common [anti-pattern](https://en.wikipedia.org/wiki/Anti-pattern)  with bastion hosts is to place SSH keys on
-them that allow access to the destination server. In this model, you connect to the bastion host and then issue
+them that allow access to the destination servers. In this model, you connect to the bastion host and then issue
 another command to SSH to the destination server using the local key. This practice is bad because if your bastion
 server is compromised, you have left the keys to the vault on the kitchen table. The recommended approach for bastion
 host access is to use the SSH ProxyCommand to route additional hops through the bastion host. The command below
@@ -345,7 +346,7 @@ provides an example of how this is accomplished.
 ssh -i ~/.ssh/KEY_FOR_ECS_INSTANCE -o "ProxyCommand ssh -W %h:%p -i ~/.ssh/KEY_FOR_BASTION_HOST ec2-user@BASTION_HOST" ec2-user@ECS_INSTANCE_HOST
 ```
 
-You can place the ProxyCommand configuration in your local [SSH config file](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Proxies_and_Jump_Hosts).
+You can also place the ProxyCommand configuration in your local [SSH config file](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Proxies_and_Jump_Hosts).
 
 
 ### Load Balancer
