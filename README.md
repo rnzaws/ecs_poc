@@ -33,6 +33,8 @@ limitations under the License.
 
 ## Overview
 
+"Everything fails, all the time." *-- [Werner Vogels](https://en.wikipedia.org/wiki/Werner_Vogels)*
+
 The goal of this POC is to provide an example of an automated ECS stack that can be deployed N times
 per AWS account and provide additional visibility (via events sent to SNS topics) into various ECS
 operations. Additionally, the POC incorporates [AWS CodePipline](https://aws.amazon.com/codepipeline/) to
@@ -65,10 +67,10 @@ project is flushed out.
 This POC builds and deploys the test services below to the ECS cluster. Changes to the test service can be made and once
 committed to the GitHub branch the CodePipeline is listening on (master by default), a new build/deploy will be triggered.
 
-| Service         | GitHub                              |
-|---------------- | ----------------------------------- |
-| 404 Not Found   | https://github.com/rnzsgh/404       |
-| PHP Hello       | https://github.com/rnzsgh/php-hello |
+| Service          | GitHub                              |
+| ---------------- | ----------------------------------- |
+| 404 Not Found    | https://github.com/rnzsgh/404       |
+| PHP Hello        | https://github.com/rnzsgh/php-hello |
 
 ---
 
@@ -245,8 +247,6 @@ programmatically.
 
 ## Amazon CloudWatch Logs
 
-"Everything fails, all the time." *-- [Werner Vogels](https://en.wikipedia.org/wiki/Werner_Vogels)*
-
 Logging is a basic tenet of software development. If something fails unexpectedly, and the application does not
 know how to handle this failure, it is a common practice to log (one way or another) the failure. In addition to
 application logging, operating system logging is also important. Both [soft errors](https://en.wikipedia.org/wiki/Soft_error)
@@ -264,7 +264,7 @@ The following host OS files are monitored and sent to CloudWatch Logs:
 
 
 | Log File                    | Purpose |
-|---------------------------- | ---------
+| --------------------------- | --------- |
 | /var/log/dmesg              | Log information for device drivers (most useful during boot) |
 | /var/log/messages           | Global system messages including cron, daemon, kern, auth, etc. |
 | /var/log/docker             | Log information for the Docker daemon |
@@ -293,6 +293,10 @@ With IAM Roles for tasks, you can grant the container access to only the service
 ---
 
 ## CloudFormation Templates
+
+
+
+
 
 ### Network
 
