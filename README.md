@@ -1,4 +1,4 @@
-# ECS POC
+# Amazon EC2 Container Service POC
 
 This is a simple POC to showcase deploying a basic [Amazon EC2 Container Service (ECS)](https://aws.amazon.com/ecs/) cluster.
 
