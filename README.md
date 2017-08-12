@@ -365,7 +365,7 @@ path-based rules. With ALB, you can have a variety of services in ECS, with diff
 ### Kinesis
 In this POC, the sample [404 service](https://github.com/rnzsgh/404) writes events to an
 [Amazon Kinesis Stream](https://aws.amazon.com/kinesis/streams/) for downstream processing.
-The purpose of this example was to showcase IAM Roles for tasks.
+The purpose of this example is to showcase [IAM Roles for Tasks](http://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html).
 
 [ops/cfn/system-kinesis.cfn.yml](ops/cfn/system-kinesis.cfn.yml)
 
