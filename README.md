@@ -54,7 +54,7 @@ Both of these projects are excellent starting points for ECS (hence why we based
 but we were looking for additional best practices and examples. The main extension points in this POC are:
 
 * Event notifications via [Amazon Simple Notification Service (SNS)](https://aws.amazon.com/sns/)
-* ECS cluster host and task logging to [Amazon CloudWatch Logs](http://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/WhatIsCloudWatchLogs.html)
+* ECS cluster Container Instance and Task logging to [Amazon CloudWatch Logs](http://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/WhatIsCloudWatchLogs.html)
 * Some control for service developers of their configuration/deployment
 * Task specific [IAM Roles](http://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html) for containers
 
@@ -92,8 +92,8 @@ All of the rules created by the POC CloudFormation templates send their matched 
 by the stack.
 
 
-#### Inactive Host
-The following rule sends an event to a topic if the ECS instance has an INACTIVE state. You can test this
+#### Inactive Container Instance
+The following rule sends an event to a topic if the ECS Container Instance has an INACTIVE state. You can test this
 event by terminating an EC2 instance in your test ECS cluster. If your ECS cluster auto scales down, this
 rule will also match.
 
@@ -255,13 +255,13 @@ and bugs do occur, so providing visibility via logging is important.
 
 In this POC, we log everything to [Amazon CloudWatch Logs](http://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/WhatIsCloudWatchLogs.html).
 
-### Host Operating System Logging
+### Container Instance Operating System Logging
 
 The [Amazon CloudWatch Logs Agent](http://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/QuickStartEC2Instance.html) is installed
-and configured on the host OS as a part of the [Launch Configuration](http://docs.aws.amazon.com/autoscaling/latest/userguide/LaunchConfiguration.html)
+and configured on the Container Instance as a part of the [Launch Configuration](http://docs.aws.amazon.com/autoscaling/latest/userguide/LaunchConfiguration.html)
 definition. The ECS documentation provides additional information on the [service specific log files](http://docs.aws.amazon.com/AmazonECS/latest/developerguide/logs.html).
 
-The following host OS files are monitored and sent to CloudWatch Logs:
+The following Container Instance files are monitored and sent to CloudWatch Logs:
 
 
 | Log File                    | Purpose |
@@ -325,7 +325,7 @@ Per best practices, the ECS instances all have [private IP addresses](https://en
 so if you need to access an instance via SSH, you will need to proxy through a [bastion host](https://en.wikipedia.org/wiki/Bastion_host).
 The CloudFormation template for the bastion host is also based on the [AWS Startup Kit](https://github.com/awslabs/startup-kit-templates).
 
-You should not need to SSH to your ECS servers because important host OS and task logs are being route to CloudWatch Logs.
+You should not need to SSH to your ECS servers because important Container Instance and Task logs are being route to CloudWatch Logs.
 
 In this example, the bastion host security group is not IP restricted (allows 0.0.0.0/0), but you can
 pass in a SshFrom parameter to the bastion.cfm.yml stack to restrict access to specific IP addresses.
@@ -358,11 +358,18 @@ path-based rules. With ALB, you can have a variety of services in ECS, with diff
 
 [ops/cfn/load-balancer.cfn.yml](ops/cfn/load-balancer.cfn.yml)
 
-### ECS Cluster
+### Amazon EC2 Container Service Cluster
+
+Creates the ECS cluster with a simple [Auto Scaling Group](http://docs.aws.amazon.com/autoscaling/latest/userguide/AutoScalingGroup.html) that allows
+the ECS instances to expand/contract based on load. Additionally, the ECS instances are configured (i.e, ECS, CLoudWatch Logs Agent) in the
+[Launch Configuration](http://docs.aws.amazon.com/autoscaling/latest/userguide/LaunchConfiguration.html). You can add additional
+Container Instance configuration in the Launch Configuration (e.g., install [OSSEC](https://ossec.github.io/)) file and
+the [cycling out your Container Instances](https://aws.amazon.com/blogs/compute/how-to-automate-container-instance-draining-in-amazon-ecs/)).
 
 [ops/cfn/ecs-cluster.cfn.yml](ops/cfn/ecs-cluster.cfn.yml)
 
 ### Kinesis
+
 In this POC, the sample [404 service](https://github.com/rnzsgh/404) writes events to an
 [Amazon Kinesis Stream](https://aws.amazon.com/kinesis/streams/) for downstream processing.
 The purpose of this example is to showcase [IAM Roles for Tasks](http://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html).
