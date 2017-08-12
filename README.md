@@ -54,7 +54,9 @@ Both of these projects are excellent starting points for ECS (hence why we based
 but we were looking for additional best practices and examples. The main extension points in this POC are:
 
 * Event notifications via [Amazon Simple Notification Service (SNS)](https://aws.amazon.com/sns/)
-* ECS cluster Container Instance and Task logging to [Amazon CloudWatch Logs](http://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/WhatIsCloudWatchLogs.html)
+* ECS cluster [Container Instance](http://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_instances.html)
+and [ECS Task](http://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definitions.html) logging
+to [Amazon CloudWatch Logs](http://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/WhatIsCloudWatchLogs.html)
 * Some control for service developers of their configuration/deployment
 * Task specific [IAM Roles](http://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html) for containers
 
@@ -93,8 +95,9 @@ by the stack.
 
 
 #### Inactive Container Instance
+
 The following rule sends an event to a topic if the ECS Container Instance has an INACTIVE state. You can test this
-event by terminating an EC2 instance in your test ECS cluster. If your ECS cluster auto scales down, this
+event by terminating an EC2 Container Instance in your test ECS cluster. If your ECS cluster auto scales down, this
 rule will also match.
 
 ```json
@@ -118,7 +121,7 @@ rule will also match.
 
 #### Essential Stopped Task
 If one of your containers fails this event is triggered. You can test this by manually stopping the Docker
-container on the ECS instance or by adding code that triggers a process exit inside your Docker image.
+container on the ECS Container Instance or by adding code that triggers a process exit inside your Docker image.
 
 The rule will not match if you deploy a new release and your old containers are stopped.
 
@@ -199,7 +202,7 @@ To solve this problem, you can create a scheduled Lambda function to monitor you
 ```
 
 #### Container Instance State Change
-The ECS container instance firehose. This is a feed of all state changes in the container instance.
+The ECS Container Instance firehose. This is a feed of all state changes in the Container Instance.
 
 The firehose is great for collecting metrics and verifying state, but is noisy and should be analyzed
 programmatically.
@@ -321,7 +324,7 @@ for a detailed explanation of the network configuration.
 
 ### Bastion Host
 
-Per best practices, the ECS instances all have [private IP addresses](https://en.wikipedia.org/wiki/Private_network),
+Per best practices, the ECS Container Instances all have [private IP addresses](https://en.wikipedia.org/wiki/Private_network),
 so if you need to access an instance via SSH, you will need to proxy through a [bastion host](https://en.wikipedia.org/wiki/Bastion_host).
 The CloudFormation template for the bastion host is also based on the [AWS Startup Kit](https://github.com/awslabs/startup-kit-templates).
 
@@ -361,7 +364,7 @@ path-based rules. With ALB, you can have a variety of services in ECS, with diff
 ### Amazon EC2 Container Service Cluster
 
 Creates the ECS cluster with a simple [Auto Scaling Group](http://docs.aws.amazon.com/autoscaling/latest/userguide/AutoScalingGroup.html) that allows
-the ECS instances to expand/contract based on load. Additionally, the ECS instances are configured (i.e, ECS, CLoudWatch Logs Agent) in the
+the ECS Container Instances to expand/contract based on load. Additionally, the ECS Container Instances are configured (i.e, ECS, CLoudWatch Logs Agent) in the
 [Launch Configuration](http://docs.aws.amazon.com/autoscaling/latest/userguide/LaunchConfiguration.html). You can add additional
 Container Instance configuration in the Launch Configuration (e.g., install [OSSEC](https://ossec.github.io/)) file and
 the [cycling out your Container Instances](https://aws.amazon.com/blogs/compute/how-to-automate-container-instance-draining-in-amazon-ecs/)).
