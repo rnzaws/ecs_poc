@@ -381,6 +381,9 @@ The purpose of this example is to showcase [IAM Roles for Tasks](http://docs.aws
 
 ### Task Roles
 
+Create the [IAM Roles for Tasks](http://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html). An ECS Task Role should only
+grant access to the services/resources they require.
+
 [ops/cfn/task-roles.cfn.yml](ops/cfn/task-roles.cfn.yml)
 
 ### Continnous Integration and Deployment
