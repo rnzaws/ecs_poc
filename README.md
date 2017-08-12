@@ -367,7 +367,7 @@ Creates the ECS cluster with a simple [Auto Scaling Group](http://docs.aws.amazo
 the ECS Container Instances to expand/contract based on load. Additionally, the ECS Container Instances are configured (i.e, ECS, CLoudWatch Logs Agent) in the
 [Launch Configuration](http://docs.aws.amazon.com/autoscaling/latest/userguide/LaunchConfiguration.html). You can add additional
 Container Instance configuration in the Launch Configuration (e.g., install [OSSEC](https://ossec.github.io/)) file and
-the [cycling out your Container Instances](https://aws.amazon.com/blogs/compute/how-to-automate-container-instance-draining-in-amazon-ecs/)).
+then [cycle out your existing Container Instances](https://aws.amazon.com/blogs/compute/how-to-automate-container-instance-draining-in-amazon-ecs/)).
 
 [ops/cfn/ecs-cluster.cfn.yml](ops/cfn/ecs-cluster.cfn.yml)
 
