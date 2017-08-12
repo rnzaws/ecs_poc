@@ -389,8 +389,15 @@ grant access to the services/resources they require.
 
 The core of the [CI/CD](https://en.wikipedia.org/wiki/CI/CD) process in this POC is the [AWS CodePipeline](https://aws.amazon.com/codepipeline/).
 For each service deployed to the ECS cluster, you should create at least one CFN CI/CD stack. The pipeline created for each service is triggered by a commit
-to the [GitHub](github.com/) branch that is configured. Once the pipeline is triggered, an [AWS CodeBuild](https://aws.amazon.com/codebuild/)
- stage is executed and the process runs the logic defined in the [build spec file](http://docs.aws.amazon.com/codebuild/latest/userguide/build-spec-ref.html).
+to the [GitHub](github.com/) branch that is configured with. Once the pipeline is triggered, an [AWS CodeBuild](https://aws.amazon.com/codebuild/)
+stage is executed and the process runs the logic defined in the [build spec file](http://docs.aws.amazon.com/codebuild/latest/userguide/build-spec-ref.html).
+Once the service is built, and the container is pushed to ECR, the service is deployed using the CloudFormation template located in the service repo. The
+required name/location for the service deployment CFN template is:
+
+```
+ops/cfn/service.cfn.yml
+```
+
 
 [ops/cfn/deployment-pipeline.cfn.yml](ops/cfn/deployment-pipeline.cfn.yml)
 
