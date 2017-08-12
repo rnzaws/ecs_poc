@@ -289,24 +289,66 @@ to centralize your logging in CloudWatch Logs.
 
 In line with [granting least privilege](http://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#grant-least-privilege) access to
 applications/services, ECS supports assigning [IAM roles to tasks](http://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html).
-With IAM Roles for tasks, you can grant the container access to only the services it needs to access.
+With IAM Roles for tasks, you can grant the container access only to the services that it requires.
 
 ---
 
 ## CloudFormation Templates
 
+### Bootstrap
+The bootstrap CFN template creates a default bucket than can be used for deploying builds and enables an [AWS CloudTrail](https://aws.amazon.com/cloudtrail/).
+If you deploy multiple ECS clusters in the same account, you should only need to create only one bootstrap stack.
 
+* ops/cfn/bootstrap.cfn.yml
 
+### Container Registry
+The CI stack creates a [Amazon EC2 Container Registry](https://aws.amazon.com/ecr/) (ECR), which is a fully-managed Docker container registry.
+ECR supports Docker Manifest V2, Schema 2. ECR is integrates with IAM, so you can have a central set of credentials/permissions/security
+for accessing your Docker images.
 
+* ops/cfn/ci-repository.cfn.yml
 
 ### Network
 
 The VPC setup and bastion server CloudFormation templates are based on the
-[AWS Startup Kit Templates](https://github.com/awslabs/startup-kit-templates). Please [review the README](https://github.com/awslabs/startup-kit-templates/blob/master/README.md)
-for a more detailed explanation of the network and bastion server. In this example, the bastion server
-security group is not IP restricted (allows 0.0.0.0/0), but you can pass in a SshFrom parameter to the
-bastion.cfm.yml stack to restrict access to specific IP addresses. We highly recommend isolating access to your
-bastion server.
+[AWS Startup Kit Templates](https://github.com/awslabs/startup-kit-templates).
+Please [review the README](https://github.com/awslabs/startup-kit-templates/blob/master/README.md)
+for a more detailed explanation of the network and bastion server.
+
+
+* ops/cfn/vpc.cfn.yml
+
+### Bastion
+
+TODO: Best practice ip restrict and stopping
+
+In this example, the bastion server security group is not IP restricted (allows 0.0.0.0/0), but you can
+pass in a SshFrom parameter to the bastion.cfm.yml stack to restrict access to specific IP addresses.
+We highly recommend isolating access to your bastion server.
+
+
+* ops/cfn/bastion.cfn.yml
+
+### Load Balancer
+
+* ops/cfn/load-balancer.cfn.yml
+
+### ECS Cluster
+
+* ops/cfn/ecs-cluster.cfn.yml
+
+### Kinesis
+
+* ops/cfn/system-kinesis.cfn.yml
+
+### Task Roles
+
+* ops/cfn/task-roles.cfn.yml
+
+### Continnous Integration and Deployment
+
+* ops/cfn/deployment-pipeline.cfn.yml
+
 
 
 
