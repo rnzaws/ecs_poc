@@ -344,8 +344,8 @@ provides an example of how this is accomplished.
 
 ```bash
 ssh -i ~/.ssh/KEY_FOR_ECS_INSTANCE -o \
-"ProxyCommand ssh -W %h:%p -i ~/.ssh/KEY_FOR_BASTION_HOST ec2-user@BASTION_HOST" \
-ec2-user@ECS_INSTANCE_HOST
+  "ProxyCommand ssh -W %h:%p -i ~/.ssh/KEY_FOR_BASTION_HOST ec2-user@BASTION_HOST" \
+  ec2-user@ECS_INSTANCE_HOST
 ```
 
 You can also place the ProxyCommand configuration in your local [SSH config file](https://en.wikibooks.org/wiki/OpenSSH/Cookbook/Proxies_and_Jump_Hosts).
