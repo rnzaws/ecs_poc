@@ -36,9 +36,10 @@ limitations under the License.
 "Everything fails, all the time." *-- [Werner Vogels](https://en.wikipedia.org/wiki/Werner_Vogels)*
 
 The goal of this POC is to provide an example of an automated ECS stack that can be deployed N times
-per AWS account and provide additional visibility (via events sent to SNS topics) into various ECS
-operations. Additionally, the POC incorporates [AWS CodePipline](https://aws.amazon.com/codepipeline/) to
-handle building and deploying to the ECS cluster.
+per AWS account and provide additional visibility into ECS operations and state. Added visibility is
+obtained by routing additional log information and observing events published by ECS. Additionally, the POC
+incorporates [AWS CodePipline](https://aws.amazon.com/codepipeline/) to handle building and deploying to the
+ECS cluster.
 
 As with all demo/open source code, please review and test extensively to verify
 that all of your use cases/requirements are covered.
