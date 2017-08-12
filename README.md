@@ -328,7 +328,7 @@ Per best practices, the ECS Container Instances all have [private IP addresses](
 so if you need to access an instance via SSH, you will need to proxy through a [bastion host](https://en.wikipedia.org/wiki/Bastion_host).
 The CloudFormation template for the bastion host is also based on the [AWS Startup Kit](https://github.com/awslabs/startup-kit-templates).
 
-You should not need to SSH to your ECS servers because important Container Instance and Task logs are being route to CloudWatch Logs.
+You should not need to SSH to your ECS servers because important Container Instance and Task logs are being routed to CloudWatch Logs.
 
 In this example, the bastion host security group is not IP restricted (allows 0.0.0.0/0), but you can
 pass in a SshFrom parameter to the bastion.cfm.yml stack to restrict access to specific IP addresses.
