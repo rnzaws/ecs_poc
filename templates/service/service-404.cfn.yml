@@ -152,8 +152,8 @@ Resources:
       State: "ENABLED"
       Targets:
         - Arn:
-            Fn::ImportValue: !Sub "${DeploymentPipelineStackName}-ecs-container-died-topic-arn"
-          Id: !Sub "container-died-tgt-${AWS::StackName}"
+            Fn::ImportValue: !Sub "${DeploymentPipelineStackName}-container-died-topic-arn"
+          Id: !Sub "c-died-tgt-${AWS::StackName}"
     DependsOn:
       - TaskDefinition
 
