@@ -57,7 +57,7 @@ aws s3 cp --recursive templates/ "s3://${TEMPLATE_BUCKET}/templates" --quiet --e
 
 aws s3 cp --recursive templates/service "s3://${TEMPLATE_BUCKET}/templates/service" --quiet --exclude '*.swp'
 
-aws cloudformation update-stack --stack-name ecs-poc-${APP_ENV} --template-url https://s3.amazonaws.com/${TEMPLATE_BUCKET}/ecs-poc.cfn.yml \
+aws cloudformation create-stack --stack-name ecs-poc-${APP_ENV} --template-url https://s3.amazonaws.com/${TEMPLATE_BUCKET}/ecs-poc.cfn.yml \
   --capabilities CAPABILITY_NAMED_IAM \
   --parameters \
     ParameterKey=TemplateBucket,ParameterValue=${TEMPLATE_BUCKET} \
