@@ -92,6 +92,9 @@ Now you are ready to setup the POC CloudFormation stack:
 This script creates the bootstrap stack, packages and uploads the CloudFormation templates to a newly created S3 bucket and then
 creates the main ecs-poc.cfn.yml stack.
 
+The CloudFormation stacks creates resources in your AWS account that will result in charges. Please delete the stacks when done
+testing.
+
 ---
 
 ## Amazon CloudWatch Events
