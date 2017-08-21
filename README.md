@@ -302,6 +302,11 @@ The bootstrap CFN template creates a default bucket that can be used for deployi
 
 [templates/bootstrap.cfn.yml](templates/bootstrap.cfn.yml)
 
+### Main Stack
+The main CloudFormation stack. This stack is a wrapper for the other stacks in the POC.
+
+[ecs-poc.cfn.yml](ecs-poc.cfn.yml)
+
 ### Container Registry
 The CI stack creates a [Amazon EC2 Container Registry](https://aws.amazon.com/ecr/) (ECR), which is a fully-managed Docker container registry.
 ECR supports [Docker Manifest V2, Schema 2](https://docs.docker.com/registry/spec/manifest-v2-2/).
