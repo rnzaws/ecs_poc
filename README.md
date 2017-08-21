@@ -154,7 +154,9 @@ In this POC, new releases are trigged, built and deployed via [AWS CodePipeline]
 template contains errors or there are system problems, this rule will match. For information on the errors this rule attempts
 to match, see the [CloudFormation Common Errors](http://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/CommonErrors.html) documentation.
 
-TODO: How do we test this event? Does this match syntax errors?
+To test this, add some random text to the service CloudFormation template, so that it is no longer a valid YAML file
+(e.g., [templates/service/service-404.yml](templates/service/service-404.yml)), upload to the S3 bucket, and then release
+a change in CodePipeline.
 
 Currently, CodePipeline does not support notifications, so it is still possible for the deployment to fail without an event.
 To solve this problem, you can create a scheduled Lambda function to monitor your CodePipeline and CloudFormation stacks.
