@@ -1,0 +1,529 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+
+# Any code, applications, scripts, templates, proofs of concept,
+# documentation and other items are provided for illustration purposes only.
+#
+# Copyright 2017 Amazon Web Services
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+Parameters:
+
+  InstanceType:
+    Type: String
+    Default: "t2.medium"
+
+  ClusterSize:
+    Type: Number
+    Default: 2
+
+  LogRetentionInDays:
+    Type: Number
+    Default: 7
+
+  VpcStackName:
+    Type: String
+    Description: "VPC stack name"
+
+  BastionStackName:
+    Type: String
+    Description: "Bastion stack name"
+
+  InstanceKeyName:
+    Type: String
+    Description: "Instance ssh key name"
+    Default: "rnzdev"
+
+  AlbStackName:
+    Type: String
+    Description: "Application Load Balancer stack name"
+
+  EcsAmiId:
+    Type: String
+    MinLength: 1
+    MaxLength: 30
+    AllowedPattern: "^[a-zA-Z][-a-zA-Z0-9]*$"
+    Default: "ami-04351e12"
+    Description: " AMI Id - default is us-east-1"
+
+Resources:
+
+  Role:
+    Type: "AWS::IAM::Role"
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument: |
+        {
+            "Statement": [{
+                "Effect": "Allow",
+                "Principal": { "Service": [ "ec2.amazonaws.com" ] },
+                "Action": [ "sts:AssumeRole" ]
+            }]
+        }
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
+      Policies:
+        - PolicyName: "cloudwatch-logs-create-log-group"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:DescribeLogStreams"
+                Resource: "arn:aws:logs:*:*:*"
+
+  InstanceProfile:
+    Type: "AWS::IAM::InstanceProfile"
+    Properties:
+      Path: /
+      Roles:
+        - !Ref Role
+
+  SecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupName: !Sub "${AWS::StackName}"
+      GroupDescription: !Sub ${AWS::StackName}-hosts
+      SecurityGroupIngress:
+        - SourceSecurityGroupId:
+            Fn::ImportValue: !Sub "${AlbStackName}-alb-security-group-id"
+          IpProtocol: -1
+        - SourceSecurityGroupId:
+            Fn::ImportValue: !Sub "${BastionStackName}-bastion-sg-id"
+          IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+      VpcId:
+        Fn::ImportValue: !Sub "${VpcStackName}-vpc-id"
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${AWS::StackName}"
+
+  Cluster:
+    Type: "AWS::ECS::Cluster"
+    Properties:
+      ClusterName: !Sub "ecs-cluster-${AWS::StackName}"
+
+  AutoScalingGroup:
+    Type: "AWS::AutoScaling::AutoScalingGroup"
+    Properties:
+      VPCZoneIdentifier:
+        - Fn::ImportValue: !Sub "${VpcStackName}-private-subnet-1-id"
+        - Fn::ImportValue: !Sub "${VpcStackName}-private-subnet-2-id"
+      LaunchConfigurationName: !Ref LaunchConfiguration
+      MinSize: !Ref ClusterSize
+      MaxSize: !Ref ClusterSize
+      DesiredCapacity: !Ref ClusterSize
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${AWS::StackName}-ecs-host"
+          PropagateAtLaunch: true
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: "PT15M"
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        MinInstancesInService: 1
+        MaxBatchSize: 1
+        PauseTime: "PT15M"
+        WaitOnResourceSignals: true
+
+  VarLogDmesgLogGroup:
+    Type: "AWS::Logs::LogGroup"
+    Properties:
+      LogGroupName: !Sub "/var/log/dmesg-${AWS::StackName}"
+      RetentionInDays: !Ref LogRetentionInDays
+
+  VarLogMessagesLogGroup:
+    Type: "AWS::Logs::LogGroup"
+    Properties:
+      LogGroupName: !Sub "/var/log/messagges-${AWS::StackName}"
+      RetentionInDays: !Ref LogRetentionInDays
+
+  VarLogDockerLogGroup:
+    Type: "AWS::Logs::LogGroup"
+    Properties:
+      LogGroupName: !Sub "/var/log/docker-${AWS::StackName}"
+      RetentionInDays: !Ref LogRetentionInDays
+
+  VarLogEcsInitLogGroup:
+    Type: "AWS::Logs::LogGroup"
+    Properties:
+      LogGroupName: !Sub "/var/log/ecs/ecs-init-${AWS::StackName}"
+      RetentionInDays: !Ref LogRetentionInDays
+
+  VarLogEcsAgentLogGroup:
+    Type: "AWS::Logs::LogGroup"
+    Properties:
+      LogGroupName: !Sub "/var/log/ecs/ecs-agent-${AWS::StackName}"
+      RetentionInDays: !Ref LogRetentionInDays
+
+  VarLogEcsAuditLogGroup:
+    Type: "AWS::Logs::LogGroup"
+    Properties:
+      LogGroupName: !Sub "/var/log/ecs/audit-${AWS::StackName}"
+      RetentionInDays: !Ref LogRetentionInDays
+
+  LaunchConfiguration:
+    Type: "AWS::AutoScaling::LaunchConfiguration"
+    Metadata:
+      AWS::CloudFormation::Init:
+        config:
+          packages:
+            yum:
+              awslogs: []
+              jq: []
+
+          commands:
+            01_add_instance_to_cluster:
+              command: !Sub "echo ECS_CLUSTER=${Cluster} > /etc/ecs/ecs.config"
+
+            02_add_awslogs_to_cluster:
+              command: "echo ECS_AVAILABLE_LOGGING_DRIVERS='[\"json-file\",\"awslogs\"]' >> /etc/ecs/ecs.config"
+
+            03_enable_task_iam_role:
+              command: "echo ECS_ENABLE_TASK_IAM_ROLE=true >> /etc/ecs/ecs.config"
+
+            04_enable_task_iam_role_network:
+              command: "echo ECS_ENABLE_TASK_IAM_ROLE_NETWORK_HOST=true >> /etc/ecs/ecs.config"
+
+          files:
+            "/etc/awslogs/awslogs.conf":
+              mode: 000400
+              owner: root
+              group: root
+              content: !Sub |
+                [general]
+                state_file = /var/lib/awslogs/agent-state
+
+                [/var/log/dmesg]
+                file = /var/log/dmesg
+                log_group_name = ${VarLogDmesgLogGroup}
+                log_stream_name = {instance_id}
+
+                [/var/log/messages]
+                file = /var/log/messages
+                log_group_name = ${VarLogMessagesLogGroup}
+                log_stream_name = {instance_id}
+                datetime_format = %b %d %H:%M:%S
+
+                [/var/log/docker]
+                file = /var/log/docker
+                log_group_name = ${VarLogDockerLogGroup}
+                log_stream_name = {instance_id}
+                datetime_format = %Y-%m-%dT%H:%M:%S.%f
+
+                [/var/log/ecs/ecs-init.log]
+                file = /var/log/ecs/ecs-init.log.*
+                log_group_name = ${VarLogEcsInitLogGroup}
+                log_stream_name = {instance_id}
+                datetime_format = %Y-%m-%dT%H:%M:%SZ
+
+                [/var/log/ecs/ecs-agent.log]
+                file = /var/log/ecs/ecs-agent.log.*
+                log_group_name = ${VarLogEcsAgentLogGroup}
+                log_stream_name = {instance_id}
+                datetime_format = %Y-%m-%dT%H:%M:%SZ
+
+                [/var/log/ecs/audit.log]
+                file = /var/log/ecs/audit.log.*
+                log_group_name = ${VarLogEcsAuditLogGroup}
+                log_stream_name = {instance_id}
+                datetime_format = %Y-%m-%dT%H:%M:%SZ
+            "/etc/cfn/cfn-hup.conf":
+              mode: 000400
+              owner: root
+              group: root
+              content: !Sub |
+                [main]
+                stack=${AWS::StackId}
+                region=${AWS::Region}
+            "/etc/cfn/hooks.d/cfn-auto-reloader.conf":
+              content: !Sub |
+                [cfn-auto-reloader-hook]
+                triggers=post.update
+                path=Resources.ContainerInstances.Metadata.AWS::CloudFormation::Init
+                action=/opt/aws/bin/cfn-init -v --region ${AWS::Region} --stack ${AWS::StackName} --resource LaunchConfiguration
+          services:
+            sysvinit:
+              cfn-hup:
+                enabled: true
+                ensureRunning: true
+                files:
+                  - /etc/cfn/cfn-hup.conf
+                  - /etc/cfn/hooks.d/cfn-auto-reloader.conf
+              awslogs:
+                enabled: true
+                ensureRunning: true
+                files:
+                  - /etc/awslogs/awslogs.conf
+    Properties:
+      ImageId: !Ref EcsAmiId
+      InstanceType: !Ref InstanceType
+      IamInstanceProfile: !Ref InstanceProfile
+      InstanceMonitoring: true
+      KeyName: !Ref InstanceKeyName
+      SecurityGroups:
+        - !Ref SecurityGroup
+      UserData:
+        "Fn::Base64": !Sub |
+          #!/bin/bash
+          yum install -y aws-cfn-bootstrap
+          /opt/aws/bin/cfn-init -v --region ${AWS::Region} --stack ${AWS::StackName} --resource LaunchConfiguration
+          /opt/aws/bin/cfn-signal -e $? --region ${AWS::Region} --stack ${AWS::StackName} --resource AutoScalingGroup
+
+  TaskStateChangeTopic:
+    Type: "AWS::SNS::Topic"
+    Properties:
+      DisplayName: !Sub "task-state-change-${AWS::StackName}"
+
+  ContainerInstanceStateChangeTopic:
+    Type: "AWS::SNS::Topic"
+    Properties:
+      DisplayName: !Sub "instance-state-change-${AWS::StackName}"
+
+  ContainerInstanceInactiveTopic:
+    Type: "AWS::SNS::Topic"
+    Properties:
+      DisplayName: !Sub "instance-inactive-${AWS::StackName}"
+
+  CloudWatchEventsTaskStateChangeTopicPolicy:
+    Type: "AWS::SNS::TopicPolicy"
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Action: "sns:Publish"
+            Principal:
+              Service:
+                - "events.amazonaws.com"
+            Resource:
+              - !Ref TaskStateChangeTopic
+      Topics:
+        - !Ref TaskStateChangeTopic
+    DependsOn:
+      - TaskStateChangeTopic
+
+  CloudWatchEventsContainerInstanceStateChangeTopicPolicy:
+    Type: "AWS::SNS::TopicPolicy"
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Action: "sns:Publish"
+            Principal:
+              Service:
+                - "events.amazonaws.com"
+            Resource:
+              - !Ref ContainerInstanceStateChangeTopic
+      Topics:
+        - !Ref ContainerInstanceStateChangeTopic
+    DependsOn:
+      - ContainerInstanceStateChangeTopic
+
+  CloudWatchEventsContainerInstanceInactiveTopicPolicy:
+    Type: "AWS::SNS::TopicPolicy"
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Action: "sns:Publish"
+            Principal:
+              Service:
+                - "events.amazonaws.com"
+            Resource:
+              - !Ref ContainerInstanceInactiveTopic
+      Topics:
+        - !Ref ContainerInstanceInactiveTopic
+    DependsOn:
+      - ContainerInstanceInactiveTopic
+
+  TaskStateChangeEventRule:
+    Type: "AWS::Events::Rule"
+    Properties:
+      Description: !Sub "TaskStateChangeEventRule-${AWS::StackName}"
+      EventPattern:
+        source:
+          - "aws.ecs"
+        detail-type:
+          - "ECS Task State Change"
+        detail:
+          clusterArn:
+            - !Sub "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:cluster/${Cluster}"
+      State: "ENABLED"
+      Targets:
+        - Arn: !Ref TaskStateChangeTopic
+          Id: !Sub "task-state-change-tgt-${AWS::StackName}"
+    DependsOn:
+      - Cluster
+      - TaskStateChangeTopic
+
+  ContainerInstanceStateChangeEventRule:
+    Type: "AWS::Events::Rule"
+    Properties:
+      Description: !Sub "ContainerInstanceStateChangeEventRule-${AWS::StackName}"
+      EventPattern:
+        source:
+          - "aws.ecs"
+        detail-type:
+          - "ECS Container Instance State Change"
+        detail:
+          clusterArn:
+            - !Sub "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:cluster/${Cluster}"
+      State: "ENABLED"
+      Targets:
+        - Arn: !Ref ContainerInstanceStateChangeTopic
+          Id: !Sub "instance-state-change-tgt-${AWS::StackName}"
+    DependsOn:
+      - Cluster
+      - ContainerInstanceStateChangeTopic
+
+  ContainerInstanceInactiveEventRule:
+    Type: "AWS::Events::Rule"
+    Properties:
+      Description: !Sub "ContainerInstanceInactiveEventRule-${AWS::StackName}"
+      EventPattern:
+        source:
+          - "aws.ecs"
+        detail-type:
+          - "ECS Container Instance State Change"
+        detail:
+          clusterArn:
+            - !Sub "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:cluster/${Cluster}"
+          status:
+            - "INACTIVE"
+      State: "ENABLED"
+      Targets:
+        - Arn: !Ref ContainerInstanceInactiveTopic
+          Id: !Sub "instance-inactive-tgt-${AWS::StackName}"
+    DependsOn:
+      - Cluster
+      - ContainerInstanceInactiveTopic
+
+Outputs:
+
+  Name:
+    Value: !Sub "${AWS::StackName}"
+    Export:
+      Name: !Sub "${AWS::StackName}-name"
+
+  RoleArn:
+    Value: !GetAtt Role.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-cluster-role-arn"
+
+  ClusterName:
+    Value: !Ref Cluster
+    Export:
+      Name: !Sub "${AWS::StackName}-ecs-cluster-name"
+
+  ClusterArn:
+    Value: !Sub "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:cluster/${Cluster}"
+    Export:
+      Name: !Sub "${AWS::StackName}-ecs-cluster-arn"
+
+  TaskStateChangeTopicArn:
+    Value: !Ref TaskStateChangeTopic
+    Export:
+      Name: !Sub "${AWS::StackName}-task-state-change-topic-arn"
+
+  TaskStateChangeTopicName:
+    Value: !GetAtt TaskStateChangeTopic.TopicName
+    Export:
+      Name: !Sub "${AWS::StackName}-task-state-change-topic-name"
+
+  ContainerInstanceStateChangeTopicArn:
+    Value: !Ref ContainerInstanceStateChangeTopic
+    Export:
+      Name: !Sub "${AWS::StackName}-instance-state-change-topic-arn"
+
+  ContainerInstanceStateChangeTopicName:
+    Value: !GetAtt ContainerInstanceStateChangeTopic.TopicName
+    Export:
+      Name: !Sub "${AWS::StackName}-instance-state-change-topic-name"
+
+  ContainerInstanceInactiveTopicArn:
+    Value: !Ref ContainerInstanceInactiveTopic
+    Export:
+      Name: !Sub "${AWS::StackName}-instance-inactive-topic-arn"
+
+  ContainerInstanceInactiveTopicName:
+    Value: !GetAtt ContainerInstanceInactiveTopic.TopicName
+    Export:
+      Name: !Sub "${AWS::StackName}-instance-inactive-topic-name"
+
+  VarLogDmesgLogGroupName:
+    Value: !Ref VarLogDmesgLogGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-varlog-dmesg-log-group"
+
+  VarLogDmesgLogGroupArn:
+    Value: !GetAtt VarLogDmesgLogGroup.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-varlog-dmesg-log-group-arn"
+
+  VarLogMessagesLogGroupName:
+    Value: !Ref VarLogMessagesLogGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-varlog-messages-log-group"
+
+  VarLogMessagesLogGroupArn:
+    Value: !GetAtt VarLogMessagesLogGroup.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-varlog-messages-log-group-arn"
+
+  VarLogDockerLogGroupName:
+    Value: !Ref VarLogDockerLogGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-varlog-docker-log-group"
+
+  VarLogDockerLogGroupArn:
+    Value: !GetAtt VarLogDockerLogGroup.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-varlog-docker-log-group-arn"
+
+  VarLogEcsInitLogGroupName:
+    Value: !Ref VarLogEcsInitLogGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-varlog-ecs-init-log-group"
+
+  VarLogEcsInitLogGroupArn:
+    Value: !GetAtt VarLogEcsInitLogGroup.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-varlog-ecs-init-log-group-arn"
+
+  VarLogEcsAgentLogGroupName:
+    Value: !Ref VarLogEcsAgentLogGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-varlog-ecs-agent-log-group"
+
+  VarLogEcsAgentLogGroupArn:
+    Value: !GetAtt VarLogEcsAgentLogGroup.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-varlog-ecs-agent-log-group-arn"
+
+  VarLogEcsAuditLogGroupName:
+    Value: !Ref VarLogEcsAuditLogGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-varlog-ecs-audit-log-group"
+
+  VarLogEcsAuditLogGroupArn:
+    Value: !GetAtt VarLogEcsAuditLogGroup.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-varlog-ecs-audit-log-group-arn"
+

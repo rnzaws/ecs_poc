@@ -1,0 +1,532 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+
+# Any code, applications, scripts, templates, proofs of concept,
+# documentation and other items are provided for illustration purposes only.
+#
+# Copyright 2017 Amazon Web Services
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+Parameters:
+
+  GitHubSourceRepo:
+    Type: String
+    Default: "404"
+
+  GitHubBranch:
+    Type: String
+    Default: "master"
+
+  DesiredCount:
+    Type: Number
+    Default: 1
+
+  GitHubToken:
+    Type: String
+
+  GitHubUser:
+    Type: String
+    Default: "rnzsgh"
+
+  BuildDockerImage:
+    Type: String
+    Default: "aws/codebuild/docker:1.12.1"
+
+  TemplateBucket:
+    Type: String
+
+  TaskName:
+    Type: String
+    Default: "default"
+
+  EcsClusterStackName:
+    Type: String
+    Description: "ECS cluster stack name"
+
+  TaskRoleStackName:
+    Type: String
+    Description: "ECS task role stack name"
+
+  SystemKinesisStackName:
+    Type: String
+    Description: "System kinesis stack name"
+
+  LogRetentionInDays:
+    Type: Number
+    Default: 7
+
+  VpcStackName:
+    Type: String
+    MinLength: 1
+    MaxLength: 100
+    Description: "Vpc stack name"
+
+  ServiceStackName:
+    Type: String
+    Description: "ECS service stack name"
+
+  AlbStackName:
+    Type: String
+    Description: "Application Load Balancer stack name"
+
+  CiRepositoryStackName:
+    Type: String
+    Description: "CI repostiory stack name"
+
+Resources:
+
+  EcsCloudFormationDeployErrorEventTopic:
+    Type: "AWS::SNS::Topic"
+    Properties:
+      DisplayName: !Sub "ecs-cloud-formation-deploy-error-topic-${AWS::StackName}"
+
+  EcsContainerDiedEventTopic:
+    Type: "AWS::SNS::Topic"
+    Properties:
+      DisplayName: !Sub "ecs-container-died-topic-${AWS::StackName}"
+
+  EcsCloudFormationDeployErrorEventTopicPolicy:
+    Type: "AWS::SNS::TopicPolicy"
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Action: "sns:Publish"
+            Principal:
+              Service:
+                - "events.amazonaws.com"
+            Resource:
+              - !Ref EcsCloudFormationDeployErrorEventTopic
+      Topics:
+        - !Ref EcsCloudFormationDeployErrorEventTopic
+    DependsOn:
+      - EcsCloudFormationDeployErrorEventTopic
+
+  EcsContainerDiedEventTopicPolicy:
+    Type: "AWS::SNS::TopicPolicy"
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Action: "sns:Publish"
+            Principal:
+              Service:
+                - "events.amazonaws.com"
+            Resource:
+              - !Ref EcsContainerDiedEventTopic
+      Topics:
+        - !Ref EcsContainerDiedEventTopic
+    DependsOn:
+      - EcsContainerDiedEventTopic
+
+  EcsCloudFormationDeployErrorEventRule:
+    Type: "AWS::Events::Rule"
+    Properties:
+      Description: !Sub "ecs-cfn-ecs-deploy-error-event-rule-${AWS::StackName}"
+      EventPattern:
+        source:
+          - "aws.cloudformation"
+        detail:
+          userIdentity:
+            sessionContext:
+              sessionIssuer:
+                arn:
+                  - !GetAtt CodePipelineServiceRole.Arn
+            invokedBy:
+              - "codepipeline.amazonaws.com"
+          errorCode:
+            - "AccessDeniedException"
+            - "IncompleteSignature"
+            - "InternalFailure"
+            - "InvalidAction"
+            - "InvalidClientTokenId"
+            - "InvalidParameterCombination"
+            - "InvalidParameterValue"
+            - "InvalidQueryParameter"
+            - "MalformedQueryString"
+            - "MissingAction"
+            - "MissingAuthenticationToken"
+            - "MissingParameter"
+            - "OptInRequired"
+            - "RequestExpired"
+            - "ServiceUnavailable"
+            - "ThrottlingException"
+            - "ValidationError"
+      State: "ENABLED"
+      Targets:
+        - Arn: !Ref EcsCloudFormationDeployErrorEventTopic
+          Id: !Sub "ecs-cfn-deploy-err-${AWS::StackName}"
+    DependsOn:
+      - EcsCloudFormationDeployErrorEventTopic
+      - CodePipelineServiceRole
+
+  CloudFormationExecutionRole:
+    Type: "AWS::IAM::Role"
+    DeletionPolicy: Delete
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument: |
+        {
+            "Statement": [{
+                "Effect": "Allow",
+                "Principal": { "Service": [ "cloudformation.amazonaws.com" ]},
+                "Action": [ "sts:AssumeRole" ]
+            }]
+        }
+      Policies:
+        - PolicyName: ecs-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource:
+                  Fn::ImportValue: !Sub "${EcsClusterStackName}-ecs-cluster-arn"
+                Effect: Allow
+                Action:
+                  - "ecs:RunTask"
+                  - "ecs:StartTask"
+                  - "ecs:StartTelemetrySession"
+                  - "ecs:StopTask"
+                  - "ecs:SubmitContainerStateChange"
+                  - "ecs:SubmitTaskStateChange"
+                  - "ecs:Poll"
+        - PolicyName: ecs-policy-all
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - "ecs:Discover*"
+                  - "ecs:CreateService"
+                  - "ecs:DeleteService"
+                  - "ecs:UpdateService"
+                  - "ecs:DeregisterTaskDefinition"
+                  - "ecs:RegisterTaskDefinition"
+                  - "ecs:Describe*"
+                  - "ecs:List*"
+        - PolicyName: iam-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource:
+                  - Fn::ImportValue: !Sub "${TaskRoleStackName}-task-role-${GitHubSourceRepo}-arn"
+                  - Fn::ImportValue: !Sub "${TaskRoleStackName}-ecs-service-role-arn"
+                Effect: Allow
+                Action:
+                  - "iam:PassRole"
+        - PolicyName: ecr-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource:
+                  Fn::ImportValue: !Sub "${CiRepositoryStackName}-repository-arn"
+                Effect: Allow
+                Action:
+                  - "ecr:BatchCheckLayerAvailability"
+                  - "ecr:BatchGetImage"
+                  - "ecr:Describe*"
+                  - "ecr:Get*"
+                  - "ecr:List*"
+        - PolicyName: alb-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - "elasticloadbalancing:ConfigureHealthCheck"
+                  - "elasticloadbalancing:CreateAppCookieStickinessPolicy"
+                  - "elasticloadbalancing:CreateLBCookieStickinessPolicy"
+                  - "elasticloadbalancing:CreateRule"
+                  - "elasticloadbalancing:CreateTargetGroup"
+                  - "elasticloadbalancing:DeleteRule"
+                  - "elasticloadbalancing:DeleteTargetGroup"
+                  - "elasticloadbalancing:DeregisterTargets"
+                  - "elasticloadbalancing:Describe*"
+                  - "elasticloadbalancing:ModifyRule"
+                  - "elasticloadbalancing:ModifyTargetGroup"
+                  - "elasticloadbalancing:ModifyTargetGroupAttributes"
+                  - "elasticloadbalancing:RegisterTargets"
+        - PolicyName: events-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - "events:*"
+
+  CodeBuildServiceRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument: |
+        {
+            "Statement": [{
+                "Effect": "Allow",
+                "Principal": { "Service": [ "codebuild.amazonaws.com" ]},
+                "Action": [ "sts:AssumeRole" ]
+            }]
+        }
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                  - "ecr:GetAuthorizationToken"
+              - Resource: !Sub "arn:aws:s3:::${ArtifactBucket}/*"
+                Effect: Allow
+                Action:
+                  - "s3:GetObject"
+                  - "s3:PutObject"
+                  - "s3:GetObjectVersion"
+              - Resource:
+                  Fn::ImportValue: !Sub "${CiRepositoryStackName}-repository-arn"
+                Effect: Allow
+                Action:
+                  - "ecr:GetDownloadUrlForLayer"
+                  - "ecr:BatchGetImage"
+                  - "ecr:BatchCheckLayerAvailability"
+                  - "ecr:PutImage"
+                  - "ecr:InitiateLayerUpload"
+                  - "ecr:UploadLayerPart"
+                  - "ecr:CompleteLayerUpload"
+
+  CodePipelineServiceRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument: |
+        {
+            "Statement": [{
+                "Effect": "Allow",
+                "Principal": { "Service": [ "codepipeline.amazonaws.com" ]},
+                "Action": [ "sts:AssumeRole" ]
+            }]
+        }
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource:
+                  - !Sub "arn:aws:s3:::${ArtifactBucket}/*"
+                  - !Sub "arn:aws:s3:::${TemplateBucket}/*"
+                Effect: Allow
+                Action:
+                  - "s3:PutObject"
+                  - "s3:GetObject"
+                  - "s3:GetObjectVersion"
+                  - "s3:GetBucketVersioning"
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - "codebuild:StartBuild"
+                  - "codebuild:BatchGetBuilds"
+                  - "cloudformation:*"
+                  - "iam:PassRole"
+
+  ArtifactBucket:
+    Type: "AWS::S3::Bucket"
+    DeletionPolicy: Delete
+
+  CodeBuildProject:
+    Type: "AWS::CodeBuild::Project"
+    Properties:
+      Artifacts:
+        Location: !Ref ArtifactBucket
+        Type: "S3"
+      Source:
+        Location: !Sub "${ArtifactBucket}/source.zip"
+        Type: "S3"
+      Environment:
+        ComputeType: "BUILD_GENERAL1_SMALL"
+        Image: !Ref BuildDockerImage
+        Type: "LINUX_CONTAINER"
+        EnvironmentVariables:
+          - Name: AWS_DEFAULT_REGION
+            Value: !Ref AWS::Region
+          - Name: REPOSITORY_URI
+            Value:
+              Fn::ImportValue: !Sub "${CiRepositoryStackName}-repository-uri"
+      Name: !Ref AWS::StackName
+      ServiceRole: !Ref CodeBuildServiceRole
+
+  ContainerLogGroup:
+    Type: "AWS::Logs::LogGroup"
+    Properties:
+      LogGroupName: !Sub "/ecs/container/${ServiceStackName}"
+      RetentionInDays: !Ref LogRetentionInDays
+
+  Pipeline:
+    Type: "AWS::CodePipeline::Pipeline"
+    Properties:
+      RoleArn: !GetAtt CodePipelineServiceRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ArtifactBucket
+      Stages:
+        - Name: Source
+          Actions:
+
+            - Name: App
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Version: 1
+                Provider: GitHub
+              Configuration:
+                Owner: !Ref GitHubUser
+                Repo: !Ref GitHubSourceRepo
+                Branch: !Ref GitHubBranch
+                OAuthToken: !Ref GitHubToken
+              OutputArtifacts:
+                - Name: App
+              RunOrder: 1
+
+            - Name: Template
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Version: 1
+                Provider: S3
+              Configuration:
+                S3Bucket: !Ref TemplateBucket
+                S3ObjectKey: !Sub "ecs-poc-templates.zip"
+              OutputArtifacts:
+                - Name: Template
+              RunOrder: 1
+
+        - Name: Build
+          Actions:
+            - Name: Build
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref CodeBuildProject
+              InputArtifacts:
+                - Name: App
+              OutputArtifacts:
+                - Name: BuildOutput
+              RunOrder: 1
+        - Name: Deploy
+          Actions:
+            - Name: Deploy
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CloudFormation
+              Configuration:
+                ChangeSetName: Deploy
+                ActionMode: "CREATE_UPDATE"
+                StackName: !Sub "${ServiceStackName}"
+                Capabilities: "CAPABILITY_NAMED_IAM"
+                TemplatePath: !Sub "Template::templates/service/service-${GitHubSourceRepo}.cfn.yml"
+                RoleArn: !GetAtt CloudFormationExecutionRole.Arn
+                ParameterOverrides: !Sub
+                  - |
+                    {
+                      "TaskName": "${TaskName}",
+                      "Tag": { "Fn::GetParam" : [ "BuildOutput", "build.json", "tag" ] },
+                      "DesiredCount": "${DesiredCount}",
+                      "EcsClusterName": "${EcsClusterName}",
+                      "CiRepositoryName": "${CiRepositoryName}",
+                      "LoadBalancerListenerArn": "${LoadBalancerListenerArn}",
+                      "VpcId": "${VpcId}",
+                      "TargetGroupArn": "${TargetGroupArn}",
+                      "DeploymentPipelineStackName": "${AWS::StackName}",
+                      "LogGroup": "${ContainerLogGroup}",
+                      "TaskRoleArn": "${TaskRoleArn}",
+                      "SystemKinesisStackName": "${SystemKinesisStackName}",
+                      "TaskRoleStackName": "${TaskRoleStackName}"
+                    }
+                  - EcsClusterName:
+                      "Fn::ImportValue": !Sub "${EcsClusterStackName}-ecs-cluster-name"
+                    CiRepositoryName:
+                      "Fn::ImportValue": !Sub "${CiRepositoryStackName}-repository-name"
+                    LoadBalancerListenerArn:
+                      "Fn::ImportValue": !Sub "${AlbStackName}-alb-listener-arn"
+                    VpcId:
+                      "Fn::ImportValue": !Sub "${VpcStackName}-vpc-id"
+                    TargetGroupArn:
+                      "Fn::ImportValue": !Sub "${AlbStackName}-404-target-group-arn"
+                    ContainerLogGroup:
+                      !Ref ContainerLogGroup
+                    TaskRoleArn:
+                      "Fn::ImportValue": !Sub "${TaskRoleStackName}-task-role-${GitHubSourceRepo}-arn"
+              InputArtifacts:
+                - Name: Template
+                - Name: BuildOutput
+              RunOrder: 1
+    DependsOn:
+      - ArtifactBucket
+      - CodeBuildProject
+      - CloudFormationExecutionRole
+      - CodePipelineServiceRole
+      - ContainerLogGroup
+
+Outputs:
+
+  Name:
+    Value: !Sub "${AWS::StackName}"
+    Export:
+      Name: !Sub "${AWS::StackName}-name"
+
+  PipelineUrl:
+    Value: !Sub "https://console.aws.amazon.com/codepipeline/home?region=${AWS::Region}#/view/${Pipeline}"
+    Export:
+      Name: !Sub "${AWS::StackName}-pipeline-url"
+
+  EcsCloudFormationDeployErrorEventTopicArn:
+    Value: !Ref EcsCloudFormationDeployErrorEventTopic
+    Export:
+      Name: !Sub "${AWS::StackName}-ecs-cloud-formation-deploy-error-event-topic-arn"
+
+  EcsCloudFormationDeployErrorEventTopicName:
+    Value: !GetAtt EcsCloudFormationDeployErrorEventTopic.TopicName
+    Export:
+      Name: !Sub "${AWS::StackName}-ecs-cloud-formation-deploy-error-event-topic-name"
+
+  EcsContainerDiedEventTopicArn:
+    Value: !Ref EcsContainerDiedEventTopic
+    Export:
+      Name: !Sub "${AWS::StackName}-ecs-container-died-topic-arn"
+
+  EcsContainerDiedEventTopicName:
+    Value: !GetAtt EcsContainerDiedEventTopic.TopicName
+    Export:
+      Name: !Sub "${AWS::StackName}-ecs-container-died-topic-name"
+
+  ContainerLogGroupName:
+    Value: !Ref ContainerLogGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-container-log-group"
+
+  ContainerLogGroupArn:
+    Value: !GetAtt ContainerLogGroup.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-container-log-group-arn"
+
