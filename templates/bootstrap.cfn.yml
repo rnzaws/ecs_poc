@@ -20,14 +20,8 @@ AWSTemplateFormatVersion: '2010-09-09'
 
 Resources:
 
-  BootstrapBucket:
-    Type: "AWS::S3::Bucket"
-    Properties:
-      VersioningConfiguration:
-        Status: Enabled
-
   TemplateBucket:
-    Type: "AWS::S3::Bucket"
+    Type: AWS::S3::Bucket
     Properties:
       VersioningConfiguration:
         Status: Enabled
@@ -44,12 +38,3 @@ Outputs:
     Export:
       Name: !Sub "${AWS::StackName}-template-bucket-arn"
 
-  BootstrapBucketName:
-    Value: !Ref BootstrapBucket
-    Export:
-      Name: !Sub "${AWS::StackName}-bootstrap-bucket-name"
-
-  BootstrapBucketArn:
-    Value: !GetAtt BootstrapBucket.Arn
-    Export:
-      Name: !Sub "${AWS::StackName}-bootstrap-bucket-arn"
