@@ -61,6 +61,56 @@ Parameters:
     AllowedPattern: "[\\x20-\\x7E]*"
     ConstraintDescription: "Key pair name can contain only ASCII characters"
 
+Mappings:
+
+  BastionHostAmiMap:  # Amazon Linux AMI
+    ap-northeast-1:
+      Ami: ami-4af5022c
+    ap-southeast-1:
+      Ami: ami-fdb8229e
+    ap-southeast-2:
+      Ami: ami-30041c53
+    eu-west-1:
+      Ami: ami-ebd02392
+    eu-west-2:
+      Ami: ami-489f8e2c
+    eu-central-1:
+      Ami: ami-657bd20a
+    us-east-1:
+      Ami: ami-4fffc834
+    us-east-2:
+      Ami: ami-ea87a78f
+    us-west-1:
+      Ami: ami-3a674d5a
+    us-west-2:
+      Ami: ami-aa5ebdd2
+    ca-central-1:
+      Ami: ami-5ac17f3e
+
+  EcsAmiMap:  # Amazon Linux ECS AMI - http://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-optimized_AMI.html
+    ap-northeast-1:
+      Ami: ami-ab5ea9cd
+    ap-southeast-1:
+      Ami: ami-ae0b91cd
+    ap-southeast-2:
+      Ami: ami-c3233ba0
+    eu-west-1:
+      Ami: ami-bd7e8dc4
+    eu-west-2:
+      Ami: ami-0a85946e
+    eu-central-1:
+      Ami: ami-f15ff69e
+    us-east-1:
+      Ami: ami-d61027ad
+    us-east-2:
+      Ami: ami-bb8eaede
+    us-west-1:
+      Ami: ami-514e6431
+    us-west-2:
+      Ami: ami-c6f81abe
+    ca-central-1:
+      Ami: ami-32bb0556
+
 Resources:
 
   Vpc:
@@ -80,6 +130,7 @@ Resources:
       Parameters:
         VpcStackName: !GetAtt Vpc.Outputs.Name
         InstanceKeyName: !Ref InstanceKeyName
+        BastionAmiId: !FindInMap [BastionHostAmiMap, !Ref "AWS::Region", Ami]
     DependsOn:
       - Vpc
 
@@ -101,6 +152,7 @@ Resources:
         AlbStackName: !GetAtt ApplicationLoadBalancer.Outputs.Name
         BastionStackName: !GetAtt Bastion.Outputs.Name
         InstanceKeyName: !Ref InstanceKeyName
+        EcsAmiId: !FindInMap [EcsAmiMap, !Ref "AWS::Region", Ami]
     DependsOn:
       - Vpc
       - ApplicationLoadBalancer
