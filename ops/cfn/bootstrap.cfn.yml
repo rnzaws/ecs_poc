@@ -18,10 +18,12 @@ AWSTemplateFormatVersion: '2010-09-09'
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 Resources:
 
   BootstrapBucket:
+    Type: "AWS::S3::Bucket"
+
+  TemplateBucket:
     Type: "AWS::S3::Bucket"
 
   CloudTrailBucket:
@@ -88,6 +90,16 @@ Resources:
       - CloudTrailLogNotificationTopicPolicy
 
 Outputs:
+
+  TemplateBucketName:
+    Value: !Ref TemplateBucket
+    Export:
+      Name: !Sub "${AWS::StackName}-template-bucket-name"
+
+  TemplateBucketArn:
+    Value: !GetAtt TemplateBucket.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-template-bucket-arn"
 
   BootstrapBucketName:
     Value: !Ref BootstrapBucket

@@ -43,6 +43,9 @@ Parameters:
     Type: String
     Default: "aws/codebuild/docker:1.12.1"
 
+  TemplateBucket:
+    Type: String
+
   TaskName:
     Type: String
     Default: "default"
@@ -339,6 +342,7 @@ Resources:
             Statement:
               - Resource:
                   - !Sub "arn:aws:s3:::${ArtifactBucket}/*"
+                  - !Sub "arn:aws:s3:::${TemplateBucket}/*"
                 Effect: Allow
                 Action:
                   - "s3:PutObject"
@@ -395,6 +399,7 @@ Resources:
       Stages:
         - Name: Source
           Actions:
+
             - Name: App
               ActionTypeId:
                 Category: Source
@@ -409,6 +414,20 @@ Resources:
               OutputArtifacts:
                 - Name: App
               RunOrder: 1
+
+            - Name: Template
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Version: 1
+                Provider: S3
+              Configuration:
+                S3Bucket: !Ref TemplateBucket
+                S3ObjectKey: !Sub "ecs-poc-templates.zip"
+              OutputArtifacts:
+                - Name: Template
+              RunOrder: 1
+
         - Name: Build
           Actions:
             - Name: Build
@@ -437,7 +456,7 @@ Resources:
                 ActionMode: "CREATE_UPDATE"
                 StackName: !Sub "${ServiceStackName}"
                 Capabilities: "CAPABILITY_NAMED_IAM"
-                TemplatePath: App::ops/cfn/service.cfn.yml
+                TemplatePath: !Sub "Template::ops/cfn/service/service-${GitHubSourceRepo}.cfn.yml"
                 RoleArn: !GetAtt CloudFormationExecutionRole.Arn
                 ParameterOverrides: !Sub
                   - |
@@ -471,7 +490,7 @@ Resources:
                     TaskRoleArn:
                       "Fn::ImportValue": !Sub "${TaskRoleStackName}-task-role-${GitHubSourceRepo}-arn"
               InputArtifacts:
-                - Name: App
+                - Name: Template
                 - Name: BuildOutput
               RunOrder: 1
     DependsOn:
