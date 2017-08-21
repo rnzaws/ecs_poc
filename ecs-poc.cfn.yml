@@ -27,7 +27,7 @@ Parameters:
     Type: String
     Default: "master"
 
-  RepoPhpHelloranch:
+  RepoPhpHelloBranch:
     Type: String
     Default: "master"
 
@@ -120,6 +120,32 @@ Resources:
         GitHubSourceRepo: 404
         GitHubBranch: !Ref Repo404Branch
         DesiredCount: !Ref Service404DesiredCount
+        GitHubToken: !Ref GitHubToken
+        GitHubUser: !Ref GitHubUser
+        BuildDockerImage: !Ref BuildDockerImage
+        TemplateBucket: !Ref TemplateBucket
+        EcsClusterStackName: !GetAtt EcsCluster.Outputs.Name
+        TaskRoleStackName: !GetAtt TaskRoles.Outputs.Name
+        LogRetentionInDays: !Ref LogRetentionInDays
+        VpcStackName: !GetAtt Vpc.Outputs.Name
+        AlbStackName: !GetAtt ApplicationLoadBalancer.Outputs.Name
+        CiRepositoryStackName: !GetAtt CiRepository.Outputs.Name
+    DependsOn:
+      - Vpc
+      - CiRepository
+      - ApplicationLoadBalancer
+      - TaskRoles
+      - EcsCluster
+
+  ServicePhpHelloCiCd:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${TemplateBucket}/templates/deployment-pipeline.cfn.yml"
+      Parameters:
+        SystemKinesisStackName: !GetAtt SystemKinesis.Outputs.Name
+        GitHubSourceRepo: php-hello
+        GitHubBranch: !Ref RepoPhpHelloBranch
+        DesiredCount: !Ref ServicePhpHelloDesiredCount
         GitHubToken: !Ref GitHubToken
         GitHubUser: !Ref GitHubUser
         BuildDockerImage: !Ref BuildDockerImage
