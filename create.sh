@@ -25,7 +25,7 @@ aws cloudformation create-stack --stack-name system-bootstrap-${APP_ENV} --templ
 
 aws cloudformation wait stack-create-complete --stack-name system-bootstrap-${APP_ENV}
 
-BOOTSTRAP_BUCKET=$(aws cloudformation describe-stacks --stack-name system-bootstrap-${APP_ENV} --query 'Stacks[0].Outputs[0].OutputValue' | tr -d '"')
+TEMPLATE_BUCKET=$(aws cloudformation describe-stacks --stack-name system-bootstrap-${APP_ENV} --query 'Stacks[0].Outputs[0].OutputValue' | tr -d '"')
 
 aws cloudformation create-stack --stack-name system-vpc-${APP_ENV} --template-body file://ops/cfn/vpc.cfn.yml
 
@@ -85,7 +85,6 @@ do
       ParameterKey=SystemKinesisStackName,ParameterValue=system-kinesis-${APP_ENV} \
       ParameterKey=CiRepositoryStackName,ParameterValue=system-ci-repository-${APP_ENV} \
       ParameterKey=GitHubToken,ParameterValue=$GITHUB_TOKEN \
-      ParameterKey=TaskName,ParameterValue=ecs-$service_github_repo-ci-${APP_ENV} \
       ParameterKey=DesiredCount,ParameterValue=2
   aws cloudformation wait stack-create-complete --stack-name ecs-$service_github_repo-ci-${APP_ENV} &
 done
