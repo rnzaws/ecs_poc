@@ -1,0 +1,175 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+
+# Any code, applications, scripts, templates, proofs of concept,
+# documentation and other items are provided for illustration purposes only.
+#
+# Copyright 2017 Amazon Web Services
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.  # You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+Parameters:
+
+  TemplateBucket:
+    Type: String
+
+  Repo404Branch:
+    Type: String
+    Default: "master"
+
+  RepoPhpHelloranch:
+    Type: String
+    Default: "master"
+
+  Service404DesiredCount:
+    Type: Number
+    Default: 2
+
+  ServicePhpHelloDesiredCount:
+    Type: Number
+    Default: 2
+
+  GitHubToken:
+    Type: String
+
+  GitHubUser:
+    Type: String
+    Default: "rnzsgh"
+
+  BuildDockerImage:
+    Type: String
+    Default: "aws/codebuild/docker:1.12.1"
+
+  LogRetentionInDays:
+    Type: Number
+    Default: 7
+
+Resources:
+
+  Vpc:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${TemplateBucket}/templates/vpc.cfn.yml"
+
+  CiRepository:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${TemplateBucket}/templates/ci-repository.cfn.yml"
+
+  Bastion:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${TemplateBucket}/templates/bastion.cfn.yml"
+      Parameters:
+        VpcStackName: !GetAtt Vpc.Outputs.Name
+    DependsOn:
+      - Vpc
+
+  ApplicationLoadBalancer:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${TemplateBucket}/templates/load-balancer.cfn.yml"
+      Parameters:
+        VpcStackName: !GetAtt Vpc.Outputs.Name
+    DependsOn:
+      - Vpc
+
+  EcsCluster:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${TemplateBucket}/templates/ecs-cluster.cfn.yml"
+      Parameters:
+        VpcStackName: !GetAtt Vpc.Outputs.Name
+        AlbStackName: !GetAtt ApplicationLoadBalancer.Outputs.Name
+        BastionStackName: !GetAtt Bastion.Outputs.Name
+    DependsOn:
+      - Vpc
+      - ApplicationLoadBalancer
+      - Bastion
+
+  SystemKinesis:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${TemplateBucket}/templates/system-kinesis.cfn.yml"
+
+  TaskRoles:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${TemplateBucket}/templates/task-roles.cfn.yml"
+      Parameters:
+        SystemKinesisStackName: !GetAtt SystemKinesis.Outputs.Name
+    DependsOn:
+      - SystemKinesis
+
+  Service404CiCd:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${TemplateBucket}/templates/deployment-pipeline.cfn.yml"
+      Parameters:
+        SystemKinesisStackName: !GetAtt SystemKinesis.Outputs.Name
+        GitHubSourceRepo: 404
+        GitHubBranch: !Ref Repo404Branch
+        DesiredCount: !Ref Service404DesiredCount
+        GitHubToken: !Ref GitHubToken
+        GitHubUser: !Ref GitHubUser
+        BuildDockerImage: !Ref BuildDockerImage
+        TemplateBucket: !Ref TemplateBucket
+        EcsClusterStackName: !GetAtt EcsCluster.Outputs.Name
+        TaskRoleStackName: !GetAtt TaskRoles.Outputs.Name
+        LogRetentionInDays: !Ref LogRetentionInDays
+        VpcStackName: !GetAtt Vpc.Outputs.Name
+        AlbStackName: !GetAtt ApplicationLoadBalancer.Outputs.Name
+        CiRepositoryStackName: !GetAtt CiRepository.Outputs.Name
+    DependsOn:
+      - Vpc
+      - CiRepository
+      - ApplicationLoadBalancer
+      - TaskRoles
+      - EcsCluster
+
+Outputs:
+
+  VpcStackName:
+    Value: !GetAtt Vpc.Outputs.Name
+    Export:
+      Name: !Sub "${AWS::StackName}-vpc-stack-name"
+
+  CiRepositoryStackName:
+    Value: !GetAtt CiRepository.Outputs.Name
+    Export:
+      Name: !Sub "${AWS::StackName}-ci-repository-stack-name"
+
+  BastionStackName:
+    Value: !GetAtt Bastion.Outputs.Name
+    Export:
+      Name: !Sub "${AWS::StackName}-bastion-stack-name"
+
+  ApplicationLoadBalancerStackName:
+    Value: !GetAtt ApplicationLoadBalancer.Outputs.Name
+    Export:
+      Name: !Sub "${AWS::StackName}-alb-stack-name"
+
+  EcsClusterStackName:
+    Value: !GetAtt EcsCluster.Outputs.Name
+    Export:
+      Name: !Sub "${AWS::StackName}-ecs-cluster-stack-name"
+
+  SystemKinesisStackName:
+    Value: !GetAtt SystemKinesis.Outputs.Name
+    Export:
+      Name: !Sub "${AWS::StackName}-system-kinesis-stack-name"
+
+  TaskRolesStackName:
+    Value: !GetAtt TaskRoles.Outputs.Name
+    Export:
+      Name: !Sub "${AWS::StackName}-task-roles-stack-name"
