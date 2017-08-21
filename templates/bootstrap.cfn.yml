@@ -32,69 +32,6 @@ Resources:
       VersioningConfiguration:
         Status: Enabled
 
-  CloudTrailBucket:
-    Type: "AWS::S3::Bucket"
-    DeletionPolicy: "Retain"
-
-  CloudTrailBucketPolicy:
-    Type: "AWS::S3::BucketPolicy"
-    Properties:
-      Bucket: !Ref CloudTrailBucket
-      PolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Sid: !Sub "aws-cloud-trail-acl-check"
-            Effect: "Allow"
-            Principal:
-              Service: "cloudtrail.amazonaws.com"
-            Action: "s3:GetBucketAcl"
-            Resource: !GetAtt CloudTrailBucket.Arn
-          - Sid: !Sub "aws-cloud-trail-write"
-            Effect: "Allow"
-            Principal:
-              Service: "cloudtrail.amazonaws.com"
-            Action: "s3:PutObject"
-            Resource: !Sub "arn:aws:s3:::${CloudTrailBucket}/AWSLogs/${AWS::AccountId}/*"
-            Condition:
-              StringEquals:
-                s3:x-amz-acl: "bucket-owner-full-control"
-    DependsOn:
-      - CloudTrailBucket
-
-  CloudTrailSnsLogNotificationTopic:
-    Type: "AWS::SNS::Topic"
-    Properties:
-      DisplayName: !Sub "${AWS::StackName}-cloud-trail-sns-log-notification-topic"
-
-  CloudTrailLogNotificationTopicPolicy:
-    Type: "AWS::SNS::TopicPolicy"
-    Properties:
-      Topics:
-        - !Ref CloudTrailSnsLogNotificationTopic
-      PolicyDocument:
-        Version: "2008-10-17"
-        Statement:
-          - Sid: !Sub "aws-cloud-trail-sns-policy"
-            Effect: "Allow"
-            Principal:
-              Service: "cloudtrail.amazonaws.com"
-            Resource: !Ref CloudTrailSnsLogNotificationTopic
-            Action: "SNS:Publish"
-    DependsOn:
-      - CloudTrailSnsLogNotificationTopic
-
-  CloudTrail:
-    Type: "AWS::CloudTrail::Trail"
-    Properties:
-      TrailName: !Sub "${AWS::StackName}-cloud-trail"
-      S3BucketName: !Ref CloudTrailBucket
-      SnsTopicName: !GetAtt CloudTrailSnsLogNotificationTopic.TopicName
-      IsLogging: true
-      EnableLogFileValidation: true
-    DependsOn:
-      - CloudTrailBucketPolicy
-      - CloudTrailLogNotificationTopicPolicy
-
 Outputs:
 
   TemplateBucketName:
@@ -116,29 +53,3 @@ Outputs:
     Value: !GetAtt BootstrapBucket.Arn
     Export:
       Name: !Sub "${AWS::StackName}-bootstrap-bucket-arn"
-
-  CloudTrailBucketName:
-    Value: !Ref CloudTrailBucket
-    Export:
-      Name: !Sub "${AWS::StackName}-cloud-trail-bucket-name"
-
-  CloudTrailBucketArn:
-    Value: !GetAtt CloudTrailBucket.Arn
-    Export:
-      Name: !Sub "${AWS::StackName}-cloud-trail-bucket-arn"
-
-  CloudTrailSnsLogNotificationTopicArn:
-    Value: !Ref CloudTrailSnsLogNotificationTopic
-    Export:
-      Name: !Sub "${AWS::StackName}-cloud-trail-sns-log-notification-topic-arn"
-
-  CloudTrailSnsLogNotificationTopicName:
-    Value: !GetAtt CloudTrailSnsLogNotificationTopic.TopicName
-    Export:
-      Name: !Sub "${AWS::StackName}-cloud-trail-sns-log-notification-topic-name"
-
-  CloudTrail:
-    Value: !Ref CloudTrail
-    Export:
-      Name: !Sub "${AWS::StackName}-cloud-trail"
-
