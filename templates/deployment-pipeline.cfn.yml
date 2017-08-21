@@ -46,10 +46,6 @@ Parameters:
   TemplateBucket:
     Type: String
 
-  TaskName:
-    Type: String
-    Default: "default"
-
   EcsClusterStackName:
     Type: String
     Description: "ECS cluster stack name"
@@ -68,13 +64,7 @@ Parameters:
 
   VpcStackName:
     Type: String
-    MinLength: 1
-    MaxLength: 100
     Description: "Vpc stack name"
-
-  ServiceStackName:
-    Type: String
-    Description: "ECS service stack name"
 
   AlbStackName:
     Type: String
@@ -89,7 +79,7 @@ Resources:
   EcsCloudFormationDeployErrorEventTopic:
     Type: "AWS::SNS::Topic"
     Properties:
-      DisplayName: !Sub "ecs-cloud-formation-deploy-error-topic-${AWS::StackName}"
+      DisplayName: !Sub "ecs-cfn-deploy-error-topic-${AWS::StackName}"
 
   EcsContainerDiedEventTopic:
     Type: "AWS::SNS::Topic"
@@ -330,6 +320,7 @@ Resources:
             Statement:
               - Resource:
                   - !Sub "arn:aws:s3:::${ArtifactBucket}/*"
+                  - !Sub "arn:aws:s3:::${TemplateBucket}"
                   - !Sub "arn:aws:s3:::${TemplateBucket}/*"
                 Effect: Allow
                 Action:
@@ -374,7 +365,7 @@ Resources:
   ContainerLogGroup:
     Type: "AWS::Logs::LogGroup"
     Properties:
-      LogGroupName: !Sub "/ecs/container/${ServiceStackName}"
+      LogGroupName: !Sub "/ecs/container/${GitHubSourceRepo}-${AWS::StackName}"
       RetentionInDays: !Ref LogRetentionInDays
 
   Pipeline:
@@ -442,14 +433,14 @@ Resources:
               Configuration:
                 ChangeSetName: Deploy
                 ActionMode: "CREATE_UPDATE"
-                StackName: !Sub "${ServiceStackName}"
+                StackName: !Sub "${GitHubSourceRepo}-${AWS::StackName}"
                 Capabilities: "CAPABILITY_NAMED_IAM"
                 TemplatePath: !Sub "Template::templates/service/service-${GitHubSourceRepo}.cfn.yml"
                 RoleArn: !GetAtt CloudFormationExecutionRole.Arn
                 ParameterOverrides: !Sub
                   - |
                     {
-                      "TaskName": "${TaskName}",
+                      "TaskName": "${GitHubSourceRepo}",
                       "Tag": { "Fn::GetParam" : [ "BuildOutput", "build.json", "tag" ] },
                       "DesiredCount": "${DesiredCount}",
                       "EcsClusterName": "${EcsClusterName}",
@@ -503,22 +494,22 @@ Outputs:
   EcsCloudFormationDeployErrorEventTopicArn:
     Value: !Ref EcsCloudFormationDeployErrorEventTopic
     Export:
-      Name: !Sub "${AWS::StackName}-ecs-cloud-formation-deploy-error-event-topic-arn"
+      Name: !Sub "${AWS::StackName}-cfn-deploy-error-event-topic-arn"
 
   EcsCloudFormationDeployErrorEventTopicName:
     Value: !GetAtt EcsCloudFormationDeployErrorEventTopic.TopicName
     Export:
-      Name: !Sub "${AWS::StackName}-ecs-cloud-formation-deploy-error-event-topic-name"
+      Name: !Sub "${AWS::StackName}-cfn-deploy-error-event-topic-name"
 
   EcsContainerDiedEventTopicArn:
     Value: !Ref EcsContainerDiedEventTopic
     Export:
-      Name: !Sub "${AWS::StackName}-ecs-container-died-topic-arn"
+      Name: !Sub "${AWS::StackName}-container-died-topic-arn"
 
   EcsContainerDiedEventTopicName:
     Value: !GetAtt EcsContainerDiedEventTopic.TopicName
     Export:
-      Name: !Sub "${AWS::StackName}-ecs-container-died-topic-name"
+      Name: !Sub "${AWS::StackName}-container-died-topic-name"
 
   ContainerLogGroupName:
     Value: !Ref ContainerLogGroup
