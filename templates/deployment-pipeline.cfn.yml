@@ -433,7 +433,7 @@ Resources:
               Configuration:
                 ChangeSetName: Deploy
                 ActionMode: "CREATE_UPDATE"
-                StackName: !Sub "${GitHubSourceRepo}-${AWS::StackName}"
+                StackName: !Sub "svc-${GitHubSourceRepo}-${AWS::StackName}"
                 Capabilities: "CAPABILITY_NAMED_IAM"
                 TemplatePath: !Sub "Template::templates/service/service-${GitHubSourceRepo}.cfn.yml"
                 RoleArn: !GetAtt CloudFormationExecutionRole.Arn
