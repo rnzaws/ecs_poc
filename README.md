@@ -399,7 +399,7 @@ The core of the [CI/CD](https://en.wikipedia.org/wiki/CI/CD) process in this POC
 For each service deployed to the ECS cluster, you should create at least one CloudFormation CI/CD stack. The pipeline created for each service is triggered by a commit
 to the [GitHub](github.com/) branch that is configured with. Once the pipeline is triggered, an [AWS CodeBuild](https://aws.amazon.com/codebuild/)
 stage is executed and the process runs the logic defined in the [build spec file](http://docs.aws.amazon.com/codebuild/latest/userguide/build-spec-ref.html).
-Once the service is built, and the container is pushed to ECR, the service is deployed using the CloudFormation template located in the [templatess/service](templates/service) directory.
+Once the service is built, and the container is pushed to ECR, the service is deployed using the CloudFormation template located in the [templates/service](templates/service) directory.
 
 [templates/deployment-pipeline.cfn.yml](templates/deployment-pipeline.cfn.yml)
 
