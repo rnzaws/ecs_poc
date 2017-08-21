@@ -41,9 +41,12 @@ Parameters:
     Description: "Bastion stack name"
 
   InstanceKeyName:
+    Description: "EC2 key pair name for bastion host SSH access"
     Type: String
-    Description: "Instance ssh key name"
-    Default: "rnzdev"
+    MinLength: 1
+    MaxLength: 255
+    AllowedPattern: "[\\x20-\\x7E]*"
+    ConstraintDescription: "Key pair name can contain only ASCII characters"
 
   AlbStackName:
     Type: String
