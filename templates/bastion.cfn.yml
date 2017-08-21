@@ -42,8 +42,6 @@ Parameters:
     MinLength: 1
     MaxLength: 30
     AllowedPattern: "^[a-zA-Z][-a-zA-Z0-9]*$"
-    Default: "ami-4fffc834"
-    Description: " AMI Id - default is us-east-1"
 
   SshFrom:
     Description: Limit SSH access to bastion hosts to a CIDR IP block
