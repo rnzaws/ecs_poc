@@ -200,7 +200,7 @@ Resources:
       Targets:
         - Arn:
             Fn::ImportValue: !Sub "${DeploymentPipelineStackName}-container-died-topic-arn"
-          Id: !Sub "c-died-tgt-${AWS::StackName}"
+          Id: !Sub "${AWS::StackName}"
     DependsOn:
       - TaskDefinition
 
