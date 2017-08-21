@@ -17,7 +17,12 @@
 
 APP_ENV="$1"
 
-GITHUB_TOKEN="$2"
+GITHUB_USER="$2"
+
+GITHUB_TOKEN="$3"
+
+SSH_KEY_NAME="$4"
+
 
 aws cloudformation create-stack --stack-name system-bootstrap-${APP_ENV} --template-body file://templates/bootstrap.cfn.yml
 aws cloudformation wait stack-create-complete --stack-name system-bootstrap-${APP_ENV}
@@ -34,8 +39,7 @@ aws cloudformation create-stack --stack-name ecs-poc-${APP_ENV} --template-url h
   --capabilities CAPABILITY_NAMED_IAM \
   --parameters \
     ParameterKey=TemplateBucket,ParameterValue=${TEMPLATE_BUCKET} \
-    ParameterKey=GitHubToken,ParameterValue=$GITHUB_TOKEN
-
-
-
+    ParameterKey=GitHubUser,ParameterValue=$GITHUB_USER \
+    ParameterKey=GitHubToken,ParameterValue=$GITHUB_TOKEN \
+    ParameterKey=InstanceKeyName,ParameterValue=$SSH_KEY_NAME
 
