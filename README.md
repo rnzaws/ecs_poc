@@ -302,7 +302,7 @@ The bootstrap CFN template creates a default bucket that can be used for deployi
 You should only need to create only one bootstrap stack per account, but you are free to create as many as you would like, and there
 will not be naming conflicts.
 
-[ops/cfn/bootstrap.cfn.yml](ops/cfn/bootstrap.cfn.yml)
+[templates/bootstrap.cfn.yml](templates/bootstrap.cfn.yml)
 
 ### Container Registry
 The CI stack creates a [Amazon EC2 Container Registry](https://aws.amazon.com/ecr/) (ECR), which is a fully-managed Docker container registry.
@@ -310,7 +310,7 @@ ECR supports [Docker Manifest V2, Schema 2](https://docs.docker.com/registry/spe
 ECR integrates with IAM, so you can have a central set of credentials/permissions/security
 for accessing your Docker images. Usually, one registry per account is enough.
 
-[ops/cfn/ci-repository.cfn.yml](ops/cfn/ci-repository.cfn.yml)
+[templates/ci-repository.cfn.yml](templates/ci-repository.cfn.yml)
 
 ### Network
 
@@ -319,7 +319,7 @@ The VPC setup CloudFormation template is based on the
 Please [review the README](https://github.com/awslabs/startup-kit-templates/blob/master/README.md)
 for a detailed explanation of the network configuration.
 
-[ops/cfn/vpc.cfn.yml](ops/cfn/vpc.cfn.yml)
+[templates/vpc.cfn.yml](templates/vpc.cfn.yml)
 
 ### Bastion Host
 
@@ -335,7 +335,7 @@ We *highly* recommend restricting access to your bastion host by IP address. Als
 to [stop the bastion server](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Stop_Start.html) if you do not need access
 to any internal servers.
 
-[ops/cfn/bastion.cfn.yml](ops/cfn/bastion.cfn.yml)
+[templates/bastion.cfn.yml](templates/bastion.cfn.yml)
 
 A common [anti-pattern](https://en.wikipedia.org/wiki/Anti-pattern)  with bastion hosts is to place SSH keys on
 them that allow access to the destination servers. In this model, you connect to the bastion host and then issue
@@ -358,7 +358,7 @@ The [Application Load Balancer](http://docs.aws.amazon.com/elasticloadbalancing/
 [Layer 7](https://en.wikipedia.org/wiki/OSI_model#Layer_7:_Application_Layer) HTTP/HTTPS router that supports both host and
 path-based rules. With ALB, you can have a variety of services in ECS, with different endpoints running on the same load balancer.
 
-[ops/cfn/load-balancer.cfn.yml](ops/cfn/load-balancer.cfn.yml)
+[templates/load-balancer.cfn.yml](templates/load-balancer.cfn.yml)
 
 ### Amazon EC2 Container Service Cluster
 
@@ -368,7 +368,7 @@ the ECS Container Instances to expand/contract based on load. Additionally, the 
 Container Instance configuration in the Launch Configuration (e.g., install [OSSEC](https://ossec.github.io/)) file and
 then [cycle out your existing Container Instances](https://aws.amazon.com/blogs/compute/how-to-automate-container-instance-draining-in-amazon-ecs/).
 
-[ops/cfn/ecs-cluster.cfn.yml](ops/cfn/ecs-cluster.cfn.yml)
+[templates/ecs-cluster.cfn.yml](templates/ecs-cluster.cfn.yml)
 
 ### Kinesis
 
@@ -376,29 +376,23 @@ In this POC, the sample [404 service](https://github.com/rnzsgh/404) writes even
 [Amazon Kinesis Stream](https://aws.amazon.com/kinesis/streams/) for downstream processing.
 The purpose of this example is to showcase [IAM Roles for Tasks](http://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html).
 
-[ops/cfn/system-kinesis.cfn.yml](ops/cfn/system-kinesis.cfn.yml)
+[templates/system-kinesis.cfn.yml](templates/system-kinesis.cfn.yml)
 
 ### Task Roles
 
 Create the [IAM Roles for Tasks](http://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html). An ECS Task Role should only
 grant access to the services/resources they require.
 
-[ops/cfn/task-roles.cfn.yml](ops/cfn/task-roles.cfn.yml)
+[templates/task-roles.cfn.yml](templates/task-roles.cfn.yml)
 
 ### Continuous Integration and Deployment
 
 The core of the [CI/CD](https://en.wikipedia.org/wiki/CI/CD) process in this POC is the [AWS CodePipeline](https://aws.amazon.com/codepipeline/).
-For each service deployed to the ECS cluster, you should create at least one CFN CI/CD stack. The pipeline created for each service is triggered by a commit
+For each service deployed to the ECS cluster, you should create at least one CloudFormation CI/CD stack. The pipeline created for each service is triggered by a commit
 to the [GitHub](github.com/) branch that is configured with. Once the pipeline is triggered, an [AWS CodeBuild](https://aws.amazon.com/codebuild/)
 stage is executed and the process runs the logic defined in the [build spec file](http://docs.aws.amazon.com/codebuild/latest/userguide/build-spec-ref.html).
-Once the service is built, and the container is pushed to ECR, the service is deployed using the CloudFormation template located in the service repo. The
-required name/location for the service deployment CFN template is:
+Once the service is built, and the container is pushed to ECR, the service is deployed using the CloudFormation template located in the [templatess/service](templates/service) directory. 
 
-```
-ops/cfn/service.cfn.yml
-```
-
-
-[ops/cfn/deployment-pipeline.cfn.yml](ops/cfn/deployment-pipeline.cfn.yml)
+[templates/deployment-pipeline.cfn.yml](templates/deployment-pipeline.cfn.yml)
 
 
