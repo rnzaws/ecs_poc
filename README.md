@@ -76,6 +76,24 @@ committed to the GitHub branch the CodePipeline is listening on (master by defau
 
 ---
 
+## Setup
+
+To setup and run this POC, [fork](https://help.github.com/articles/fork-a-repo/) the two sample services into your own GitHub account.
+While in GitHub, generate a [personal access token](https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/).
+
+Next, make sure you have the [AWS Command Line Interface](https://aws.amazon.com/cli/) installed and configured.
+
+Now you are ready to setup the POC CloudFormation stack:
+
+```
+./bootstrap.sh test GITHUB_USERNAME GITHUB_ACCESS_TOKEN AWS_SSH_KEY_NAME
+```
+
+This script creates the bootstrap stack, packages and uploads the CloudFormation templates to a newly created S3 bucket and then
+creates the main ecs-poc.cfn.yml stack.
+
+---
+
 ## Amazon CloudWatch Events
 
 To provide additional visibility into ECS, this project added several
@@ -371,7 +389,7 @@ path-based rules. With ALB, you can have a variety of services in ECS, with diff
 ### Amazon EC2 Container Service Cluster
 
 Creates the ECS cluster with a simple [Auto Scaling Group](http://docs.aws.amazon.com/autoscaling/latest/userguide/AutoScalingGroup.html) that allows
-the ECS Container Instances to expand/contract based on load. Additionally, the ECS Container Instances are configured (i.e, ECS, CLoudWatch Logs Agent) in the
+the ECS Container Instances to expand/contract based on load. Additionally, the ECS Container Instances are configured (i.e, ECS, CloudWatch Logs Agent) in the
 [Launch Configuration](http://docs.aws.amazon.com/autoscaling/latest/userguide/LaunchConfiguration.html). You can add additional
 Container Instance configuration in the Launch Configuration (e.g., install [OSSEC](https://ossec.github.io/)) file and
 then [cycle out your existing Container Instances](https://aws.amazon.com/blogs/compute/how-to-automate-container-instance-draining-in-amazon-ecs/).
