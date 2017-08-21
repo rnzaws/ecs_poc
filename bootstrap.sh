@@ -19,42 +19,15 @@ APP_ENV="$1"
 
 GITHUB_TOKEN="$2"
 
-#
-# Upsert the bootstrap template and then package and upload the CFN templates.
-#
-
-aws cloudformation describe-stacks --stack-name system-bootstrap-${APP_ENV} >> /dev/null 2>&1
-stack_describe=$?
-
-stack_command="create"
-
-# If the value is zero, then the stack exists.
-if [ "$stack_describe" == "0" ]; then
-  stack_command="update"
-fi
-
-bootstrap_output=$((aws cloudformation ${stack_command}-stack --stack-name system-bootstrap-${APP_ENV} --template-body file://templates/bootstrap.cfn.yml) 2>&1)
-bootstrap_exit_code=$?
-
-if [ "$bootstrap_exit_code" != "0" ]; then
-  if [[ $bootstrap_output != *"No updates are to be performed"* ]]; then
-     echo $bootstrap_output
-     exit $bootstrap_exit_code
-  fi
-else
-  aws cloudformation wait stack-${stack_command}-complete --stack-name system-bootstrap-${APP_ENV}
-fi
+aws cloudformation create-stack --stack-name system-bootstrap-${APP_ENV} --template-body file://templates/bootstrap.cfn.yml
+aws cloudformation wait stack-create-complete --stack-name system-bootstrap-${APP_ENV}
 
 TEMPLATE_BUCKET=$(aws cloudformation describe-stacks --stack-name system-bootstrap-${APP_ENV} --output text --query 'Stacks[0].Outputs[?OutputKey==`TemplateBucketName`].OutputValue' | tr -d '"')
 
 zip -q ecs-poc-templates.zip ecs-poc-cfn.yml templates/* templates/service/*
-
 aws s3 cp ecs-poc-templates.zip "s3://${TEMPLATE_BUCKET}" --quiet --exclude '*.swp'
-
 aws s3 cp ecs-poc.cfn.yml "s3://${TEMPLATE_BUCKET}" --quiet --exclude '*.swp'
-
 aws s3 cp --recursive templates/ "s3://${TEMPLATE_BUCKET}/templates" --quiet --exclude '*.swp'
-
 aws s3 cp --recursive templates/service "s3://${TEMPLATE_BUCKET}/templates/service" --quiet --exclude '*.swp'
 
 aws cloudformation create-stack --stack-name ecs-poc-${APP_ENV} --template-url https://s3.amazonaws.com/${TEMPLATE_BUCKET}/ecs-poc.cfn.yml \
