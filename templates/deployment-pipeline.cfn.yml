@@ -125,7 +125,7 @@ Resources:
   EcsCloudFormationDeployErrorEventRule:
     Type: "AWS::Events::Rule"
     Properties:
-      Description: !Sub "ecs-cfn-ecs-deploy-error-event-rule-${AWS::StackName}"
+      Description: !Sub "deploy-error-event-rule-${AWS::StackName}"
       EventPattern:
         source:
           - "aws.cloudformation"
@@ -158,7 +158,7 @@ Resources:
       State: "ENABLED"
       Targets:
         - Arn: !Ref EcsCloudFormationDeployErrorEventTopic
-          Id: !Sub "ecs-cfn-deploy-err-${AWS::StackName}"
+          Id: !Sub "deploy-err-${AWS::StackName}"
     DependsOn:
       - EcsCloudFormationDeployErrorEventTopic
       - CodePipelineServiceRole
