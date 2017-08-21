@@ -44,7 +44,6 @@ Parameters:
 
   GitHubUser:
     Type: String
-    Default: "rnzsgh"
 
   BuildDockerImage:
     Type: String
@@ -53,6 +52,14 @@ Parameters:
   LogRetentionInDays:
     Type: Number
     Default: 7
+
+  InstanceKeyName:
+    Description: "EC2 key pair name for bastion host and ECS instance SSH access"
+    Type: String
+    MinLength: 1
+    MaxLength: 255
+    AllowedPattern: "[\\x20-\\x7E]*"
+    ConstraintDescription: "Key pair name can contain only ASCII characters"
 
 Resources:
 
@@ -72,6 +79,7 @@ Resources:
       TemplateURL: !Sub "https://s3.amazonaws.com/${TemplateBucket}/templates/bastion.cfn.yml"
       Parameters:
         VpcStackName: !GetAtt Vpc.Outputs.Name
+        InstanceKeyName: !Ref InstanceKeyName
     DependsOn:
       - Vpc
 
@@ -92,6 +100,7 @@ Resources:
         VpcStackName: !GetAtt Vpc.Outputs.Name
         AlbStackName: !GetAtt ApplicationLoadBalancer.Outputs.Name
         BastionStackName: !GetAtt Bastion.Outputs.Name
+        InstanceKeyName: !Ref InstanceKeyName
     DependsOn:
       - Vpc
       - ApplicationLoadBalancer
