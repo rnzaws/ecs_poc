@@ -83,7 +83,7 @@ While in GitHub, generate a [personal access token](https://help.github.com/arti
 
 Next, make sure you have the [AWS Command Line Interface](https://aws.amazon.com/cli/) installed and configured.
 
-Now you are ready to setup the POC CloudFormation stack:
+Now you are ready to create the POC CloudFormation stack:
 
 ```
 ./bootstrap.sh test GITHUB_USERNAME GITHUB_ACCESS_TOKEN AWS_SSH_KEY_NAME
