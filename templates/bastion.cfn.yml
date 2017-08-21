@@ -47,7 +47,6 @@ Parameters:
     Description: Limit SSH access to bastion hosts to a CIDR IP block
     Type: String
     MinLength: 9
-    Default: "0.0.0.0/0"
 
 Resources:
 
