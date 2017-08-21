@@ -95,6 +95,9 @@ creates the main ecs-poc.cfn.yml stack.
 The CloudFormation stacks creates resources in your AWS account that will result in charges. Please delete the stacks when done
 testing.
 
+Note: The EC2 Container Service is not available in all AWS regions, see the
+[service region table](https://aws.amazon.com/about-aws/global-infrastructure/regional-product-services/) for more information.
+
 ---
 
 ## Amazon CloudWatch Events
