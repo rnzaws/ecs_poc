@@ -35,7 +35,6 @@ Parameters:
     MinLength: 1
     MaxLength: 255
     AllowedPattern: "[\\x20-\\x7E]*"
-    Default: "rnzdev"
     ConstraintDescription: "Key pair name can contain only ASCII characters"
 
   BastionAmiId:
