@@ -158,6 +158,8 @@ To test this, add some random text to the service CloudFormation template, so th
 (e.g., [templates/service/service-404.yml](templates/service/service-404.yml)), upload to the S3 bucket, and then release
 a change in CodePipeline.
 
+This event will also match if you release a build without changes.
+
 Currently, CodePipeline does not support notifications, so it is still possible for the deployment to fail without an event.
 To solve this problem, you can create a scheduled Lambda function to monitor your CodePipeline and CloudFormation stacks.
 
@@ -184,7 +186,8 @@ To solve this problem, you can create a scheduled Lambda function to monitor you
       "RequestExpired",
       "ServiceUnavailable",
       "ThrottlingException",
-      "ValidationError"
+      "ValidationError",
+      "ValidationException"
     ],
     "userIdentity": {
       "sessionContext": {
