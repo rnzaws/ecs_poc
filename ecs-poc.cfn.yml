@@ -61,6 +61,12 @@ Parameters:
     AllowedPattern: "[\\x20-\\x7E]*"
     ConstraintDescription: "Key pair name can contain only ASCII characters"
 
+  SshFrom:
+    Description: Limit SSH access to bastion hosts to a CIDR IP block
+    Type: String
+    MinLength: 9
+    Default: "0.0.0.0/0"
+
 Mappings:
 
   BastionHostAmiMap:  # Amazon Linux AMI
@@ -131,6 +137,7 @@ Resources:
         VpcStackName: !GetAtt Vpc.Outputs.Name
         InstanceKeyName: !Ref InstanceKeyName
         BastionAmiId: !FindInMap [BastionHostAmiMap, !Ref "AWS::Region", Ami]
+        SshFrom: !Ref SshFrom
     DependsOn:
       - Vpc
 
