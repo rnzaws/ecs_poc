@@ -23,10 +23,11 @@ limitations under the License.
 ## Table of Contents
 1. [Overview](#overview)
 2. [Sample Services](#sample-services)
-3. [Amazon CloudWatch Events](#amazon-cloudwatch-events)
-4. [Amazon CloudWatch Logs](#amazon-cloudwatch-logs)
-5. [Task Level Permissions](#task-level-permissions)
-6. [CloudFormation Templates](#cloudformation-templates)
+3. [Setup](#setup)
+4. [Amazon CloudWatch Events](#amazon-cloudwatch-events)
+5. [Amazon CloudWatch Logs](#amazon-cloudwatch-logs)
+6. [Task Level Permissions](#task-level-permissions)
+7. [CloudFormation Templates](#cloudformation-templates)
 
 ---
 
