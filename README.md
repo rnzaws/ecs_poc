@@ -5,7 +5,7 @@ This is a simple POC to showcase deploying a basic [Amazon EC2 Container Service
 Any code, applications, scripts, templates, proofs of concept,
 documentation and other items are provided for illustration purposes only.
 
-Copyright 2017 Amazon Web Services
+Copyright 2017 Ryan Nitz
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
